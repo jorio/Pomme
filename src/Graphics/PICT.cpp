@@ -240,11 +240,13 @@ static ARGBPixmap ReadPICTBits(BigEndianIStream& f, int opcode, const Rect& canv
 {
 	bool directBitsOpcode = opcode == 0x009A || opcode == 0x009B;
 
-	//printf("@@@ ReadPictBits %04x ", opcode); LOG << "canvasRect: " << canvasRect << "\n";
-
 	if (directBitsOpcode) f.Skip(4); //skip junk
-	int rowbytes = f.Read<SInt16>();
-	//LOG << "**** rowbytes = " << rowbytes << "\n";
+
+	UInt16 rowbytes = f.Read<UInt16>();
+
+	// Get rid of MSB in rowbytes so we pass a real length to UnpackXXX functions
+	bool rowbytesMSBWasHigh = 0 != (rowbytes & 0x8000);
+	rowbytes &= 0x7FFF;
 
 	Rect frameRect = ReadRect(f);
 	LOG << "frameRect " << frameRect << "\n";
@@ -255,18 +257,18 @@ static ARGBPixmap ReadPICTBits(BigEndianIStream& f, int opcode, const Rect& canv
 	int pixelSize = -1;
 	int componentCount = -1;
 
-		SInt16 pixmapVersion	= f.Read<SInt16>();
-		packType			    = f.Read<SInt16>();
-		SInt32 packSize			= f.Read<SInt32>();
-		Fixed hResolution		= f.Read<Fixed >();
-		Fixed vResolution		= f.Read<Fixed >();
-		SInt16 pixelType		= f.Read<SInt16>();
-		pixelSize               = f.Read<UInt16>();
-		componentCount          = f.Read<UInt16>();
-		SInt16 componentSize	= f.Read<SInt16>();
-		SInt32 planeBytes		= f.Read<SInt32>();
-		SInt32 table			= f.Read<SInt32>();
-	if (directBitsOpcode || (rowbytes & 0x8000) != 0)
+	SInt16 pixmapVersion	= f.Read<SInt16>();
+	packType			    = f.Read<SInt16>();
+	SInt32 packSize			= f.Read<SInt32>();
+	Fixed hResolution		= f.Read<Fixed >();
+	Fixed vResolution		= f.Read<Fixed >();
+	SInt16 pixelType		= f.Read<SInt16>();
+	pixelSize				= f.Read<UInt16>();
+	componentCount			= f.Read<UInt16>();
+	SInt16 componentSize	= f.Read<SInt16>();
+	SInt32 planeBytes		= f.Read<SInt32>();
+	SInt32 table			= f.Read<SInt32>();
+	if (directBitsOpcode || rowbytesMSBWasHigh)
 	{
 		f.Skip(4);
 
@@ -281,11 +283,16 @@ static ARGBPixmap ReadPICTBits(BigEndianIStream& f, int opcode, const Rect& canv
 			<< "\n\tcomponent size  " << componentSize
 			<< "\n\tplane bytes     " << planeBytes
 			<< "\n\ttable           " << table
+			<< "\n\trowbytes        " << rowbytes << " (MSB " << (rowbytesMSBWasHigh? "hi": "lo") << ")"
 			<< "\n";
 
 		if (pixelSize > 32) throw PICTException("pixmap invalid bpp");
 		if (componentCount > 4) throw PICTException("pixmap invalid component count");
 		if (componentSize <= 0) throw PICTException("pixmap invalid component size");
+	}
+	else
+	{
+		LOG << "PICT: neither directBitsOpcode nor rowbytesMSBWasHigh\n";
 	}
 
 	auto palette = std::vector<Color>();
@@ -334,17 +341,11 @@ static ARGBPixmap ReadPICTBits(BigEndianIStream& f, int opcode, const Rect& canv
 		throw PICTException("unimplemented opcode");
 	}
 
-	if (!directBitsOpcode && (rowbytes & 0x8000) == 0)
-	{
-		throw PICTException("negative rowbytes");
-	}
-	else
-	{
-		int cw = Width(canvasRect);
-		int ch = Height(canvasRect);
+	int cw = Width(canvasRect);
+	int ch = Height(canvasRect);
 
-		switch (packType)
-		{
+	switch (packType)
+	{
 		case 0: // 8-bit indexed color, packed bytewise
 			return Unpack0(f, cw, ch, palette);
 
@@ -356,7 +357,6 @@ static ARGBPixmap ReadPICTBits(BigEndianIStream& f, int opcode, const Rect& canv
 
 		default:
 			throw PICTException("don't know how to unpack this pixel size");
-		}
 	}
 }
 

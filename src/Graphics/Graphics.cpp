@@ -280,6 +280,11 @@ void DamagePortRegion(const Rect* r)
 	curPort->DamageRegion(*r);
 }
 
+CGrafPtr GetWindowPort(WindowPtr window)
+{
+	return window;
+}
+
 void DumpPortTGA(const char* outPath)
 {
 	curPort->pixels.WriteTGA(outPath);

@@ -122,6 +122,8 @@ void SetPort(GrafPtr port);
 
 void GetPort(GrafPtr* port);
 
+CGrafPtr GetWindowPort(WindowPtr window);
+
 void MoveTo(short h, short v);
 
 void GetForeColor(RGBColor* rgb);

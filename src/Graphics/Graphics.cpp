@@ -285,6 +285,12 @@ CGrafPtr GetWindowPort(WindowPtr window)
 	return window;
 }
 
+Rect* GetPortBounds(CGrafPtr port, Rect* rect)
+{
+	*rect = port->portRect;
+	return rect;
+}
+
 void DumpPortTGA(const char* outPath)
 {
 	curPort->pixels.WriteTGA(outPath);

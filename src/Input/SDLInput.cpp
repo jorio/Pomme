@@ -179,6 +179,13 @@ void GetKeys(KeyMap km)
 #endif
 }
 
+void GetMouse(Point* mouseLoc)
+{
+	ONCE(TODOMINOR());
+	mouseLoc->h = 320;
+	mouseLoc->v = 240;
+}
+
 Boolean Button(void)
 {
 	ONCE(TODOMINOR());

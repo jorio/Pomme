@@ -96,11 +96,19 @@ long GetResourceSizeOnDisk(Handle);
 long SizeResource(Handle);
 
 //-----------------------------------------------------------------------------
-// QuickDraw 2D
+// QuickDraw 2D: Shapes
 
 void SetRect(Rect* r, short left, short top, short right, short bottom);
 
+void OffsetRect(Rect* r, short dh, short dv);
+
+// ----------------------------------------------------------------------------
+// QuickDraw 2D: PICT
+
 PicHandle GetPicture(short PICTresourceID);
+
+// ----------------------------------------------------------------------------
+// QuickDraw 2D: GWorld
 
 void DisposeGWorld(GWorldPtr offscreenGWorld);
 
@@ -118,6 +126,15 @@ void GetGWorld(CGrafPtr* port, GDHandle* gdh);
 
 void SetGWorld(CGrafPtr port, GDHandle gdh);
 
+// IM:QD:6-31
+PixMapHandle GetGWorldPixMap(GWorldPtr offscreenGWorld);
+
+// IM:QD:6-38
+Ptr GetPixBaseAddr(PixMapHandle pm);
+
+// ----------------------------------------------------------------------------
+// QuickDraw 2D: Port
+
 void SetPort(GrafPtr port);
 
 void GetPort(GrafPtr* port);
@@ -125,6 +142,9 @@ void GetPort(GrafPtr* port);
 CGrafPtr GetWindowPort(WindowPtr window);
 
 Rect* GetPortBounds(CGrafPtr port, Rect* rect);
+
+// ----------------------------------------------------------------------------
+// QuickDraw 2D: Pen state manipulation
 
 void MoveTo(short h, short v);
 
@@ -144,6 +164,13 @@ void RGBBackColor2(UInt32 color);
 // Pomme extension (not part of the original Toolbox API).
 void RGBForeColor2(UInt32 color);
 
+void PenNormal(void);
+
+void PenSize(short width, short height);
+
+// ----------------------------------------------------------------------------
+// QuickDraw 2D: Paint
+
 void PaintRect(const Rect* r);
 
 void EraseRect(const Rect* r);
@@ -151,6 +178,11 @@ void EraseRect(const Rect* r);
 void LineTo(short h, short v);
 
 void FrameRect(const Rect*);
+
+void FrameArc(const Rect* r, short startAngle, short arcAngle);
+
+// ----------------------------------------------------------------------------
+// QuickDraw 2D: Text rendering
 
 //short TextWidth(const char* textBuf, short firstByte, short byteCount);
 
@@ -162,12 +194,6 @@ void DrawStringC(const char* cstr);
 
 // IM:QD:7-44
 void DrawPicture(PicHandle myPicture, const Rect* dstRect);
-
-// IM:QD:6-31
-PixMapHandle GetGWorldPixMap(GWorldPtr offscreenGWorld);
-
-// IM:QD:6-38
-Ptr GetPixBaseAddr(PixMapHandle pm);
 
 void CopyBits(
 	const PixMap* srcBits,
@@ -217,6 +243,9 @@ void NumToStringC(long theNum, Str255 theString);
 // Input
 
 void GetKeys(KeyMap);
+
+// Gets current mouse coordinates relative to current port
+void GetMouse(Point* mouseLoc);
 
 Boolean Button(void);
 
@@ -318,6 +347,8 @@ OSErr SndDisposeChannel(SndChannelPtr chan, Boolean quietNow);
 OSErr SndChannelStatus(SndChannelPtr chan, short theLength, SCStatusPtr theStatus);
 
 OSErr SndDoImmediate(SndChannelPtr chan, const SndCommand* cmd);
+
+OSErr SndDoCommand(SndChannelPtr chan, const SndCommand* cmd, Boolean noWait);
 
 OSErr GetSoundHeaderOffset(SndListHandle sndHandle, long* offset);
 

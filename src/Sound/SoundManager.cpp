@@ -521,6 +521,12 @@ OSErr SndDoImmediate(SndChannelPtr chan, const SndCommand* cmd)
 	return noErr;
 }
 
+OSErr SndDoCommand(SndChannelPtr chan, const SndCommand* cmd, Boolean noWait)
+{
+	TODOMINOR();
+	return noErr;
+}
+
 template<typename T>
 static void Expect(const T a, const T b, const char* msg)
 {

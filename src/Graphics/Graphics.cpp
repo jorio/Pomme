@@ -191,6 +191,14 @@ void SetRect(Rect* r, short left, short top, short right, short bottom)
 	r->bottom = bottom;
 }
 
+void OffsetRect(Rect* r, short dh, short dv)
+{
+	r->left		+= dh;
+	r->right	+= dh;
+	r->top		+= dv;
+	r->bottom	+= dv;
+}
+
 // ---------------------------------------------------------------------------- -
 // GWorld
 
@@ -352,6 +360,16 @@ void RGBForeColor2(const UInt32 color)
 	penFG = 0xFF000000 | (color & 0x00FFFFFF);
 }
 
+void PenNormal(void)
+{
+	TODOMINOR();
+}
+
+void PenSize(short width, short height)
+{
+	TODOMINOR();
+}
+
 // ---------------------------------------------------------------------------- -
 // Paint
 
@@ -446,6 +464,11 @@ void FrameRect(const Rect* r)
 	for (int y = r->top; y < r->bottom; y++) pm.Plot(r->right - 1 - offx, y             - offy, color);
 
 	curPort->DamageRegion(*r);
+}
+
+void FrameArc(const Rect* r, short startAngle, short arcAngle)
+{
+	TODOMINOR();
 }
 
 void Pomme::Graphics::DrawARGBPixmap(int left, int top, ARGBPixmap& pixmap)

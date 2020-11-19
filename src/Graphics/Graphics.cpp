@@ -650,11 +650,21 @@ void DrawChar(char c)
 
 void Pomme::Graphics::SetWindowIconFromIcl8Resource(short icl8ID)
 {
-	Handle macIcon = GetResource('icl8', icl8ID);
-	if (1024 != GetHandleSize(macIcon))
+	Handle colorIcon = GetResource('icl8', icl8ID);
+	if (1024 != GetHandleSize(colorIcon))
 	{
+		DisposeHandle(colorIcon);
 		throw std::invalid_argument("icl8 resource has incorrect size");
 	}
+
+	Handle bwIcon = GetResource('ICN#', icl8ID);
+	if (256 != GetHandleSize(bwIcon))
+	{
+		DisposeHandle(bwIcon);
+		throw std::invalid_argument("ICN# resource has incorrect size");
+	}
+	uint32_t* maskScanlines = (uint32_t*)(*bwIcon + 128);  // mask starts 128 bytes into ICN# resource
+	ByteswapInts(4, 32, maskScanlines);
 
 	const int width = 32;
 	const int height = 32;
@@ -665,11 +675,18 @@ void Pomme::Graphics::SetWindowIconFromIcl8Resource(short icl8ID)
 		uint32_t* out = (uint32_t*) ((char*) icon->pixels + icon->pitch * y);
 		for (int x = 0; x < width; x++)
 		{
-			unsigned char pixel = (*macIcon)[y * width + x];
-			*out++ = pixel == 0 ? 0 : Pomme::Graphics::clut8[pixel];
+			uint8_t paletteEntry = (*colorIcon)[y * width + x];
+			uint32_t argb = Pomme::Graphics::clut8[paletteEntry];
+			bool masked = maskScanlines[y] & (1 << (width - 1 - x));
+			if (!masked)
+			{
+				argb &= 0x00FFFFFF;
+			}
+			*out++ = argb;
 		}
 	}
 	SDL_SetWindowIcon(gSDLWindow, icon);
 	SDL_FreeSurface(icon);
-	DisposeHandle(macIcon);
+	DisposeHandle(colorIcon);
+	DisposeHandle(bwIcon);
 }

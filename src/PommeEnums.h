@@ -210,6 +210,12 @@ enum ESndInit
     initNoDrop = 0x0008,    // no drop-sample conversion
 };
 
+enum ESndVolume
+{
+	kFullVolume = 0x0100,
+	kNoVolume = 0,
+};
+
 // Sound commands
 enum ESndCmds
 {

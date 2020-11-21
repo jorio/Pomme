@@ -234,6 +234,7 @@ typedef FilePlayCompletionProcPtr FilePlayCompletionUPP;
 // Keyboard input types
 
 typedef UInt32 KeyMap[4];
+typedef UInt8 KeyMapByteArray[16];
 
 //-----------------------------------------------------------------------------
 // 'vers' resource

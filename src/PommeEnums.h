@@ -401,3 +401,36 @@ enum
     greenColor      = 341,
     blueColor       = 409,
 };
+
+enum
+{
+	srcCopy = 0,
+	srcOr = 1,
+	srcXor = 2,
+	srcBic = 3,
+	notSrcCopy = 4,
+	notSrcOr = 5,
+	notSrcXor = 6,
+	notSrcBic = 7,
+	patCopy = 8,
+	patOr = 9,
+	patXor = 10,
+	patBic = 11,
+	notPatCopy = 12,
+	notPatOr = 13,
+	notPatXor = 14,
+	notPatBic = 15,
+	grayishTextOr = 49,
+	hilitetransfermode = 50,
+	hilite = 50,
+	blend = 32,
+	addPin = 33,
+	addOver = 34,
+	subPin = 35,
+	addMax = 37,
+	adMax = 37,
+	subOver = 38,
+	adMin = 39,
+	ditherCopy = 64,
+	transparent = 36
+};

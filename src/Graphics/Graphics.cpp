@@ -557,6 +557,8 @@ void CopyBits(
 			4 * srcRectWidth
 		);
 	}
+
+	curPort->DamageRegion(*dstRect);
 }
 
 // ---------------------------------------------------------------------------- -

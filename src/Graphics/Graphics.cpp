@@ -77,8 +77,11 @@ struct GrafPortImpl
 
 static std::unique_ptr<GrafPortImpl> screenPort = nullptr;
 static GrafPortImpl* curPort = nullptr;
+
+// Pen colors are stored as ARGB in the host's native endianness
 static UInt32 penFG = 0xFF'FF'00'FF;
 static UInt32 penBG = 0xFF'00'00'FF;
+
 static int penX = 0;
 static int penY = 0;
 
@@ -553,14 +556,48 @@ void CopyBits(
 
 	if (srcRectWidth != dstRectWidth || srcRectHeight != dstRectHeight)
 		TODOFATAL2("can only copy between rects of same dimensions");
-	
-	for (int y = 0; y < srcRectHeight; y++)
+
+	switch (mode)
 	{
-		memcpy(
-			dstPM.GetPtr(dstRect->left - dstBounds.left, dstRect->top - dstBounds.top + y),
-			srcPM.GetPtr(srcRect->left - srcBounds.left, srcRect->top - srcBounds.top + y),
-			4 * srcRectWidth
-		);
+		case srcCopy:
+			for (int y = 0; y < srcRectHeight; y++)
+			{
+				memcpy(
+						dstPM.GetPtr(dstRect->left - dstBounds.left, dstRect->top - dstBounds.top + y),
+						srcPM.GetPtr(srcRect->left - srcBounds.left, srcRect->top - srcBounds.top + y),
+						4 * srcRectWidth
+				);
+			}
+			break;
+
+		case srcCopy|transparent:
+		{
+			// Replaces the destination pixel with the source pixel
+			// if the source pixel is not equal to the background color.
+
+			UInt32 transparentColor = penBG;
+			ByteswapInts(sizeof(transparentColor), 1, &transparentColor);  // need to byteswap because ARGBPixmap.GetPtr returns a pointer to raw (big-endian) ARGB ints
+
+			for (int y = 0; y < srcRectHeight; y++)
+			{
+				UInt32* dstPix = dstPM.GetPtr(dstRect->left - dstBounds.left, dstRect->top - dstBounds.top + y);
+				UInt32* srcPix = srcPM.GetPtr(srcRect->left - srcBounds.left, srcRect->top - srcBounds.top + y);
+				for (int x = 0; x < srcRectWidth; x++)
+				{
+					if (*srcPix != transparentColor)
+					{
+						*dstPix = *srcPix;
+					}
+					dstPix++;
+					srcPix++;
+				}
+			}
+			break;
+		}
+
+		default:
+			TODOFATAL2("unsupported CopyBits mode " << mode);
+			break;
 	}
 
 	curPort->DamageRegion(*dstRect);

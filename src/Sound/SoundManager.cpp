@@ -493,9 +493,21 @@ OSErr SndDoImmediate(SndChannelPtr chan, const SndCommand* cmd)
 		break;
 
 	case ampCmd:
-		impl.source.SetGain(cmd->param1 / 255.0);
-		LOG << "ampCmd " << impl.source.gain << "\n";
+		impl.source.SetGain(cmd->param1 / 256.0);
 		break;
+
+	case volumeCmd:
+	{
+		uint16_t lvol = (cmd->param2      ) & 0xFFFF;
+		uint16_t rvol = (cmd->param2 >> 16) & 0xFFFF;
+
+		double pan = (double)rvol / (rvol + lvol);
+		pan = (pan - 0.5) * 2.0;  // Transpose pan from [0...1] to [-1...+1]
+
+		impl.source.SetPan(pan);
+		impl.source.SetGain(std::max(lvol, rvol) / 256.0);
+		break;
+	}
 
 	case freqCmd:
 		LOG << "freqCmd " << cmd->param2 << " " << GetMidiNoteName(cmd->param2) << " " << midiNoteFrequencies[cmd->param2] << "\n";

@@ -143,6 +143,9 @@ CGrafPtr GetWindowPort(WindowPtr window);
 
 Rect* GetPortBounds(CGrafPtr port, Rect* rect);
 
+// WARNING: actual toolbox function returns BitMap*, not PixMap*!
+PixMap* GetPortBitMapForCopyBits(CGrafPtr window);
+
 // ----------------------------------------------------------------------------
 // QuickDraw 2D: Pen state manipulation
 
@@ -195,6 +198,7 @@ void DrawStringC(const char* cstr);
 // IM:QD:7-44
 void DrawPicture(PicHandle myPicture, const Rect* dstRect);
 
+// WARNING: Actual toolbox function takes BitMap* arguments, not PixMap*!
 void CopyBits(
 	const PixMap* srcBits,
 	PixMap* dstBits,

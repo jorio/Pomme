@@ -293,6 +293,11 @@ CGrafPtr GetWindowPort(WindowPtr window)
 	return window;
 }
 
+PixMap* GetPortBitMapForCopyBits(CGrafPtr window)
+{
+	return GetImpl(window).macpmPtr;
+}
+
 Rect* GetPortBounds(CGrafPtr port, Rect* rect)
 {
 	*rect = port->portRect;

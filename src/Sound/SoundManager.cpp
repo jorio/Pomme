@@ -488,6 +488,7 @@ OSErr SndDoImmediate(SndChannelPtr chan, const SndCommand* cmd)
 		impl.source.Stop();
 		break;
 
+	case bufferCmd:
 	case soundCmd:
 		ProcessSoundCmd(chan, cmd->ptr);
 		break;

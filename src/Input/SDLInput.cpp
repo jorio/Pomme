@@ -181,9 +181,11 @@ void GetKeys(KeyMap km)
 
 void GetMouse(Point* mouseLoc)
 {
-	ONCE(TODOMINOR());
-	mouseLoc->h = 320;
-	mouseLoc->v = 240;
+	int x;
+	int y;
+	SDL_GetMouseState(&x, &y);
+	mouseLoc->h = x;
+	mouseLoc->v = y;
 }
 
 Boolean Button(void)

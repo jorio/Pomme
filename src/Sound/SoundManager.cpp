@@ -744,9 +744,9 @@ Boolean Pomme_DecompressSoundResource(SndListHandle* sndHandlePtr, long* offsetT
 }
 
 //-----------------------------------------------------------------------------
-// Extension: pause/unpause looping channels
+// Extension: pause/unpause channels that are currently playing
 
-void Pomme_PauseLoopingChannels(Boolean pause)
+void Pomme_PauseAllChannels(Boolean pause)
 {
 	for (auto* chan = headChan; chan; chan = chan->GetNext())
 	{

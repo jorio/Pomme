@@ -15,11 +15,13 @@ namespace Pomme::Files
 	public:
 		ForkType forkType;
 		char permission;
+		FSSpec spec;
 
 	protected:
-		ForkHandle(ForkType _forkType, char _permission)
+		ForkHandle(ForkType _forkType, char _permission, const FSSpec& _spec)
 			: forkType(_forkType)
 			, permission(_permission)
+			, spec(_spec)
 		{}
 
 	public:

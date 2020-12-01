@@ -18,8 +18,8 @@ struct HostForkHandle : public ForkHandle
 	std::fstream backingStream;
 
 public:
-	HostForkHandle(ForkType theForkType, char perm, fs::path& path)
-		: ForkHandle(theForkType, perm)
+	HostForkHandle(ForkType theForkType, char perm, fs::path& path, const FSSpec& theSpec)
+		: ForkHandle(theForkType, perm, theSpec)
 	{
 		std::ios::openmode openmode = std::ios::binary;
 		if (permission & fsWrPerm) openmode |= std::ios::out;
@@ -135,7 +135,7 @@ OSErr HostVolume::OpenFork(const FSSpec* spec, ForkType forkType, char permissio
 		{
 			return fnfErr;
 		}
-		handle = std::make_unique<HostForkHandle>(DataFork, permission, path);
+		handle = std::make_unique<HostForkHandle>(DataFork, permission, path, *spec);
 		return noErr;
 	}
 	else
@@ -173,7 +173,7 @@ OSErr HostVolume::OpenFork(const FSSpec* spec, ForkType forkType, char permissio
 				continue;
 			}
 			path = candidatePath;
-			handle = std::make_unique<HostForkHandle>(ResourceFork, permission, path);
+			handle = std::make_unique<HostForkHandle>(ResourceFork, permission, path, *spec);
 			if (c.isAppleDoubleFile)
 			{
 				ADFJumpToResourceFork(handle->GetStream());

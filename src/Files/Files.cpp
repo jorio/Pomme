@@ -45,6 +45,15 @@ std::iostream& Pomme::Files::GetStream(short refNum)
 	return openFiles[refNum]->GetStream();
 }
 
+const FSSpec& Pomme::Files::GetSpec(short refNum)
+{
+	if (!IsRefNumLegal(refNum))
+	{
+		throw std::runtime_error("illegal refNum");
+	}
+	return openFiles[refNum]->spec;
+}
+
 void Pomme::Files::CloseStream(short refNum)
 {
 	if (!IsRefNumLegal(refNum))

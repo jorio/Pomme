@@ -35,6 +35,8 @@ namespace Pomme::Files
 
 	std::iostream& GetStream(short refNum);
 
+	const FSSpec& GetSpec(short refNum);
+
 	void CloseStream(short refNum);
 
 	FSSpec HostPathToFSSpec(const fs::path& fullPath);

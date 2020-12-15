@@ -340,6 +340,23 @@ OSErr SetEOF(short refNum, long logEOF)
 	return unimpErr;
 }
 
+OSErr GetFPos(short refNum, long* filePos)
+{
+	if (!IsRefNumLegal(refNum)) return rfNumErr;
+	if (!IsStreamOpen(refNum)) return fnOpnErr;
+
+	auto& f = GetStream(refNum);
+	*filePos = (long) f.tellg();
+
+	return noErr;
+}
+
+OSErr SetFPos(short refNum, long filePos)
+{
+	TODO();
+	return unimpErr;
+}
+
 FSSpec Pomme::Files::HostPathToFSSpec(const fs::path& fullPath)
 {
 	return dynamic_cast<HostVolume*>(volumes[0].get())->ToFSSpec(fullPath);

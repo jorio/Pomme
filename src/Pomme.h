@@ -62,6 +62,10 @@ OSErr GetEOF(short refNum, long* logEOF);
 
 OSErr SetEOF(short refNum, long logEOF);
 
+OSErr GetFPos(short refNum, long* filePos);
+
+OSErr SetFPos(short refNum, long filePos);
+
 //-----------------------------------------------------------------------------
 // Resource file management
 

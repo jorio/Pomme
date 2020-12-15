@@ -212,11 +212,11 @@ void Mixer::Process(int16_t* dst, int len)
 
 Source::Source()
 {
+	ClearPrivate();
 	active = false;
-	Clear();
 }
 
-void Source::Clear()
+void Source::ClearPrivate()
 {
 	samplerate	= 0;
 	length		= 0;
@@ -233,6 +233,14 @@ void Source::Clear()
 	gain		= 0;
 	pan			= 0;
 	onComplete	= nullptr;
+}
+
+void Source::Clear()
+{
+	gMixer.Lock();
+	ClearPrivate();
+	ClearImplementation();
+	gMixer.Unlock();
 }
 
 void Source::Init(int theSampleRate, int theLength)
@@ -258,7 +266,7 @@ Source::~Source()
 
 void Source::Rewind()
 {
-	Rewind2();
+	RewindImplementation();
 	position = 0;
 	rewind = false;
 	end = length;
@@ -468,16 +476,12 @@ void Source::Stop()
 
 WavStream::WavStream()
 	: Source()
-	, bitdepth(0)
-	, channels(0)
-	, bigEndian(false)
-	, idx(0)
-	, userBuffer()
-{}
-
-void WavStream::Clear()
 {
-	Source::Clear();
+	ClearImplementation();
+}
+
+void WavStream::ClearImplementation()
+{
 	bitdepth = 0;
 	channels = 0;
 	bigEndian = false;
@@ -514,7 +518,7 @@ std::span<char> WavStream::SetBuffer(std::vector<char>&& data)
 	return std::span(userBuffer.data(), userBuffer.size());
 }
 
-void WavStream::Rewind2()
+void WavStream::RewindImplementation()
 {
 	idx = 0;
 }

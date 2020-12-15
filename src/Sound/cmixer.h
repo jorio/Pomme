@@ -59,19 +59,23 @@ namespace cmixer
 		double pan;                     // Pan set by `cm_set_pan()`
 		std::function<void()> onComplete;        // Callback
 
+		void ClearPrivate();
+
 	protected:
 		Source();
 
 		void Init(int samplerate, int length);
 
-		virtual void Rewind2() = 0;
+		virtual void RewindImplementation() = 0;
+
+		virtual void ClearImplementation() = 0;
 
 		virtual void FillBuffer(int16_t* buffer, int length) = 0;
 
 	public:
 		virtual ~Source();
 
-		virtual void Clear();
+		void Clear();
 
 		void Rewind();
 
@@ -113,7 +117,9 @@ namespace cmixer
 		std::span<char> span;
 		std::vector<char> userBuffer;
 
-		void Rewind2() override;
+		void ClearImplementation() override;
+
+		void RewindImplementation() override;
 
 		void FillBuffer(int16_t* buffer, int length) override;
 
@@ -125,8 +131,6 @@ namespace cmixer
 
 	public:
 		WavStream();
-
-		virtual void Clear() override;
 
 		void Init(
 			int theSampleRate,

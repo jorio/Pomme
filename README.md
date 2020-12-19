@@ -6,10 +6,6 @@ The goal isn't to achieve 100% source compatibility with old Mac C programs, but
 
 This project originated in 2020 to aid in updating Pangea Software's [Nanosaur](https://github.com/jorio/Nanosaur) to run on modern operating systems.
 
-## Credits
+## License
 
-- © 2020 Iliyas Jorio (unless other attribution noted in source modules)
-- Portions derived from [cmixer](https://github.com/rxi/cmixer), © 2017 rxi
-- Portions derived from ffmpeg, © 2001-2003 The FFmpeg Project
-- Portions copied from [gulrak/filesystem](https://github.com/gulrak/filesystem), © 2018 Steffen Schümann
-- Portions copied from [tcbrindle/span](https://github.com/tcbrindle/span), © 2018 Tristan Brindle
+Please see [LICENSE.md](LICENSE.md)

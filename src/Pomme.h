@@ -312,6 +312,8 @@ Ptr NewPtr(Size);
 
 Ptr NewPtrSys(Size);
 
+Ptr NewPtrClear(Size);
+
 void DisposePtr(Ptr p);
 
 //-----------------------------------------------------------------------------

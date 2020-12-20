@@ -102,6 +102,14 @@ Ptr NewPtrSys(Size byteCount)
 	return new char[byteCount];
 }
 
+Ptr NewPtrClear(Size byteCount)
+{
+	if (byteCount < 0) throw std::invalid_argument("trying to NewPtrClear negative size");
+	Ptr ptr = new char[byteCount];
+	memset(ptr, 0, byteCount);
+	return ptr;
+}
+
 void DisposePtr(Ptr p)
 {
 	delete[] p;

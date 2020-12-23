@@ -41,7 +41,11 @@ namespace Pomme::Graphics
 		{ return (UInt32*) &data.data()[4 * (y * width + x)]; }
 	};
 
-	void Init(const char* windowTitle, int windowWidth, int windowHeight);
+	void Init(
+			const char* windowTitle,
+			int windowWidth,
+			int windowHeight,
+			int msaaSamples = 0);
 
 	void Shutdown();
 

@@ -66,11 +66,11 @@ void HideCursor()
 //-----------------------------------------------------------------------------
 // Our own init
 
-void Pomme::Init(const char* windowName)
+void Pomme::Init(const InitParams& params)
 {
 	Pomme::Time::Init();
 	Pomme::Files::Init();
-	Pomme::Graphics::Init(windowName, 640, 480);
+	Pomme::Graphics::Init(params.windowName, params.windowWidth, params.windowHeight, params.msaaSamples);
 	Pomme::Sound::Init();
 	Pomme::Input::Init();
 }

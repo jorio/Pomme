@@ -6,6 +6,7 @@
 #include <iostream>
 #include <memory>
 #include <SDL.h>
+#include <SDL_opengl.h>
 
 using namespace Pomme;
 using namespace Pomme::Graphics;
@@ -100,7 +101,11 @@ CGrafPtr Pomme::Graphics::GetScreenPort(void)
 	return &screenPort->port;
 }
 
-void Pomme::Graphics::Init(const char* windowTitle, int windowWidth, int windowHeight)
+void Pomme::Graphics::Init(
+		const char* windowTitle,
+		int windowWidth,
+		int windowHeight,
+		int msaaSamples)
 {
 	if (0 != SDL_Init(SDL_INIT_VIDEO))
 	{
@@ -112,6 +117,12 @@ void Pomme::Graphics::Init(const char* windowTitle, int windowWidth, int windowH
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
 #endif
+
+	if (msaaSamples != 0)
+	{
+		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
+		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, msaaSamples);
+	}
 
 	gSDLWindow = SDL_CreateWindow(
 		windowTitle,

@@ -1,3 +1,5 @@
+#undef NOUSER
+
 #include "Platform/Windows/PommeWindows.h"
 
 #include <shlobj.h>

@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <fstream>
 #include <iostream>
+#include "CompilerSupport/filesystem.h"
 
 #define LOG POMME_GENLOG(POMME_DEBUG_RESOURCES, "RSRC")
 
@@ -19,6 +20,8 @@ static OSErr lastResError = noErr;
 static std::vector<ResourceFork> rezSearchStack;
 
 static int rezSearchStackIndex = 0;
+
+static fs::path rezDumpHostDestinationPath = "";
 
 //-----------------------------------------------------------------------------
 // Internal
@@ -48,24 +51,50 @@ static void PrintStack(const char* msg) {
 	}
 	LOG << "------------------------------------\n";
 }
+#endif
 
-static void DumpResource(ResourceMetadata& meta)
+static void DumpResource(const ResourceMetadata& meta)
 {
+	const FSSpec& spec = Pomme::Files::GetSpec(meta.forkRefNum);
+
 	Handle handle = NewHandle(meta.size);
 	auto& fork = Pomme::Files::GetStream(meta.forkRefNum);
 	fork.seekg(meta.dataOffset, std::ios::beg);
 	fork.read(*handle, meta.size);
+	
+	fs::path outPath;
+	outPath = rezDumpHostDestinationPath;
+	outPath /= spec.cName;
+	outPath /= Pomme::FourCCString(meta.type, '_');
+	fs::create_directories(outPath);
+	
+	std::stringstream ss;
+	ss << meta.id;
+	if (!meta.name.empty())
+	{
+		ss << "-";
+		for (auto c: meta.name)
+			ss << (char)(isalnum(c)? c: '_');
+	}
+	outPath /= ss.str();
+	outPath += "." + Pomme::FourCCString(meta.type, '_');
 
-	std::stringstream fn;
-	fn << "rezdump/" << meta.id << "_" << meta.name << "." << Pomme::FourCCString(meta.type, '_');
-	std::ofstream dump(fn.str(), std::ofstream::binary);
+	std::ofstream dump(outPath, std::ofstream::binary);
+
+	// Add a 512-byte blank header to PICTs so tools such as ImageMagick or Preview.app will display them
+	if (meta.type == 'PICT')
+	{
+		for (int i = 0; i < 512; i++)
+			dump.put(0);
+	}
+
 	dump.write(*handle, meta.size);
 	dump.close();
-	std::cout << "wrote " << fn.str() << "\n";
+
+	std::cout << "wrote " << outPath << "\n";
 
 	DisposeHandle(handle);
 }
-#endif
 
 //-----------------------------------------------------------------------------
 // Resource file management
@@ -166,6 +195,10 @@ short FSpOpenResFile(const FSSpec* spec, char permission)
 			resMetadata.size       = size;
 			resMetadata.name       = name;
 			GetCurRF().resourceMap[resType][resID] = resMetadata;
+
+			// Dump resource to file (if user called Pomme_StartDumpingResource)
+			if (!rezDumpHostDestinationPath.empty())
+				DumpResource(resMetadata);
 		}
 	}
 
@@ -258,6 +291,7 @@ Handle GetResource(ResType theType, short theID)
 		Handle handle = NewHandle(meta.size);
 		forkStream.seekg(meta.dataOffset, std::ios::beg);
 		forkStream.read(*handle, meta.size);
+
 		return handle;
 	}
 
@@ -301,4 +335,16 @@ long GetResourceSizeOnDisk(Handle theResource)
 long SizeResource(Handle theResource)
 {
 	return GetResourceSizeOnDisk(theResource);
+}
+
+void Pomme_StartDumpingResources(const char* hostDestinationPath)
+{
+	if (hostDestinationPath)
+	{
+		rezDumpHostDestinationPath = hostDestinationPath;
+	}
+	else
+	{
+		rezDumpHostDestinationPath.clear();
+	}
 }

@@ -46,11 +46,12 @@ std::string Pomme::FourCCString(uint32_t t, char filler)
 #if !(TARGET_RT_BIGENDIAN)
 	std::reverse(b, b + 4);
 #endif
-	// replace non-ascii with '?'
+	// Replace any non-alphanumeric character with the filler character.
+	// This ensures that the resulting string is suitable for use as a filename.
 	for (int i = 0; i < 4; i++)
 	{
-		char c = b[i];
-		if (c < ' ' || c > '~') b[i] = filler;
+		if (!isalnum(b[i]))
+			b[i] = filler;
 	}
 	b[4] = '\0';
 	return b;

@@ -31,21 +31,33 @@ void ImplementMe(const char* fn, std::string msg, int severity);
 	ImplementMe(__func__, ss.str(), severity); \
 }
 
-#define TODOMINOR()      TODOCUSTOM("", 0)
-#define TODOMINOR2(x)    TODOCUSTOM(x, 0)
-#define TODO()           TODOCUSTOM("", 1)
-#define TODO2(x)         TODOCUSTOM(x, 1)
 #define TODOFATAL()      TODOCUSTOM("", 2)
 #define TODOFATAL2(x)    TODOCUSTOM(x, 2)
 
-#define ONCE(x)			{ \
-	static bool once = false; \
-	if (!once) { \
-		once = true; \
-		{x} \
-		printf("  \x1b[90m\\__ this todo won't be shown again\x1b[0m\n"); \
-	} \
-}
+#if _DEBUG
 
+	#define TODOMINOR()      TODOCUSTOM("", 0)
+	#define TODOMINOR2(x)    TODOCUSTOM(x, 0)
+	#define TODO()           TODOCUSTOM("", 1)
+	#define TODO2(x)         TODOCUSTOM(x, 1)
 
-#endif
+	#define ONCE(x)			{ \
+		static bool once = false; \
+		if (!once) { \
+			once = true; \
+			{x} \
+			printf("  \x1b[90m\\__ this todo won't be shown again\x1b[0m\n"); \
+		} \
+	}
+
+#else
+
+	#define TODOMINOR()     {}
+	#define TODOMINOR2(x)   {}
+	#define TODO()          {}
+	#define TODO2(x)        {}
+	#define ONCE(x)         {x}
+
+#endif // _DEBUG
+
+#endif // __cplusplus

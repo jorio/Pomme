@@ -151,6 +151,18 @@ OSErr HostVolume::OpenFork(const FSSpec* spec, ForkType forkType, char permissio
 			bool isAppleDoubleFile;
 		} candidates[] =
 		{
+#if LEGACY_FILESYSTEM_IMPLEMENTATION
+			// "._NAME": ADF contained in zips created by macOS's built-in archiver
+			{ "._" + specName, true },
+
+			// "NAME.rsrc": ADF extracted from StuffIt/CompactPro archives by unar
+			{ specName + ".rsrc", true },
+
+#if __APPLE__
+			// "NAME/..namedfork/rsrc": macOS-specific way to access true resource forks (not ADF)
+			{ specName + "/..namedfork/rsrc", false },
+#endif
+#else
 			// "._NAME": ADF contained in zips created by macOS's built-in archiver
 			{ u8"._" + specName, true },
 
@@ -160,6 +172,7 @@ OSErr HostVolume::OpenFork(const FSSpec* spec, ForkType forkType, char permissio
 #if __APPLE__
 			// "NAME/..namedfork/rsrc": macOS-specific way to access true resource forks (not ADF)
 			{ specName + u8"/..namedfork/rsrc", false },
+#endif
 #endif
 		};
 

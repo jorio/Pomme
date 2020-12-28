@@ -19,7 +19,7 @@ using namespace Pomme::Files;
 
 #define LOG POMME_GENLOG(POMME_DEBUG_FILES, "FILE")
 
-constexpr int MAX_VOLUMES = 32767;  // vRefNum is a signed short
+//constexpr int MAX_VOLUMES = 32767;  // vRefNum is a signed short -- commented out for now because we only have one volume
 
 //-----------------------------------------------------------------------------
 // State

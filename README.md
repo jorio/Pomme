@@ -4,7 +4,7 @@
 
 The goal isn't to achieve 100% source compatibility with old Mac C programs, but rather, to make it a bit easier to port them. I only intend to implement the bare minimum functionality required to keep a reasonable level of source code compatibility with the games I'm interested in porting.
 
-This project originated in 2020 to aid in updating Pangea Software's [Nanosaur](https://github.com/jorio/Nanosaur) to run on modern operating systems.
+This library was originally written to port Pangea Software's [Nanosaur](https://github.com/jorio/Nanosaur) and [Bugdom](https://github.com/jorio/Bugdom) to modern operating systems.
 
 ## License
 

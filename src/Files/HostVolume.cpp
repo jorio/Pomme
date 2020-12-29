@@ -140,59 +140,14 @@ OSErr HostVolume::OpenFork(const FSSpec* spec, ForkType forkType, char permissio
 	}
 	else
 	{
-		// We want to open a resource fork on the host volume.
-		// It is likely stored under one of the following names: ._NAME, NAME.rsrc, or NAME/..namedfork/rsrc
-
-		auto specName = path.filename().u8string();
-
-		struct
+		// We want to open a resource fork on the host volume. It is likely stored as <NAME>.rsrc.
+		path += ".rsrc";
+		if (!fs::is_regular_file(path))
 		{
-			u8string filename;
-			bool isAppleDoubleFile;
-		} candidates[] =
-		{
-#if LEGACY_FILESYSTEM_IMPLEMENTATION
-			// "._NAME": ADF contained in zips created by macOS's built-in archiver
-			{ "._" + specName, true },
-
-			// "NAME.rsrc": ADF extracted from StuffIt/CompactPro archives by unar
-			{ specName + ".rsrc", true },
-
-#if __APPLE__
-			// "NAME/..namedfork/rsrc": macOS-specific way to access true resource forks (not ADF)
-			{ specName + "/..namedfork/rsrc", false },
-#endif
-#else
-			// "._NAME": ADF contained in zips created by macOS's built-in archiver
-			{ u8"._" + specName, true },
-
-			// "NAME.rsrc": ADF extracted from StuffIt/CompactPro archives by unar
-			{ specName + u8".rsrc", true },
-
-#if __APPLE__
-			// "NAME/..namedfork/rsrc": macOS-specific way to access true resource forks (not ADF)
-			{ specName + u8"/..namedfork/rsrc", false },
-#endif
-#endif
-		};
-
-		path.remove_filename();
-
-		for (auto c : candidates)
-		{
-			auto candidatePath = path / c.filename;
-			if (!fs::is_regular_file(candidatePath))
-			{
-				continue;
-			}
-			path = candidatePath;
-			handle = std::make_unique<HostForkHandle>(ResourceFork, permission, path, *spec);
-			if (c.isAppleDoubleFile)
-			{
-				ADFJumpToResourceFork(handle->GetStream());
-			}
-			return noErr;
+			return fnfErr;
 		}
+		handle = std::make_unique<HostForkHandle>(ResourceFork, permission, path, *spec);
+		ADFJumpToResourceFork(handle->GetStream());
 	}
 
 	return fnfErr;
@@ -226,19 +181,16 @@ static bool CaseInsensitiveAppendToPath(
 			continue;
 		}
 
+#if LEGACY_FILESYSTEM_IMPLEMENTATION  // ghc::path::u8string returns an std::string
+		std::string f = candidate.path().filename().u8string();
+#else
 		auto f = FromU8(candidate.path().filename().u8string());
+#endif
 
-		// It might be an AppleDouble resource fork ("._file" or "file.rsrc")
-		if (candidate.is_regular_file())
+		// It might be an AppleDouble resource fork ("file.rsrc")
+		if (candidate.is_regular_file() && f.ends_with(".rsrc"))
 		{
-			if (f.starts_with("._"))
-			{
-				f = f.substr(2);
-			}
-			else if (f.ends_with(".rsrc"))
-			{
-				f = f.substr(0, f.length() - 5);
-			}
+			f = f.substr(0, f.length() - 5);
 		}
 
 		if (ELEMENT == UppercaseCopy(f))

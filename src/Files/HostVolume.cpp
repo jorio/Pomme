@@ -136,7 +136,6 @@ OSErr HostVolume::OpenFork(const FSSpec* spec, ForkType forkType, char permissio
 			return fnfErr;
 		}
 		handle = std::make_unique<HostForkHandle>(DataFork, permission, path, *spec);
-		return noErr;
 	}
 	else
 	{
@@ -150,7 +149,7 @@ OSErr HostVolume::OpenFork(const FSSpec* spec, ForkType forkType, char permissio
 		ADFJumpToResourceFork(handle->GetStream());
 	}
 
-	return fnfErr;
+	return noErr;
 }
 
 static bool CaseInsensitiveAppendToPath(

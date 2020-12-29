@@ -176,7 +176,7 @@ OSErr FindFolder(short vRefNum, OSType folderType, Boolean createFolder, short* 
 		const char* home = getenv("XDG_CONFIG_HOME");
 		if (home)
 		{
-			path = std::filesystem::path(home);
+			path = fs::path(home);
 		}
 		else
 		{
@@ -185,7 +185,7 @@ OSErr FindFolder(short vRefNum, OSType folderType, Boolean createFolder, short* 
 			{
 				return fnfErr;
 			}
-			path = std::filesystem::path(home) / ".config";
+			path = fs::path(home) / ".config";
 		}
 #endif
 		break;

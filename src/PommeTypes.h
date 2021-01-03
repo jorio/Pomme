@@ -69,7 +69,10 @@ typedef void                            (*ProcPtr);
 //-----------------------------------------------------------------------------
 // (Pascal) String types
 
+typedef char                            Str15[16];
+typedef char                            Str31[32];
 typedef char                            Str32[33];
+typedef char                            Str63[64];
 typedef char                            Str255[256];
 typedef char*							StringPtr;
 typedef const char*                     ConstStr255Param;

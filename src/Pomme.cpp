@@ -45,9 +45,9 @@ void FlushEvents(short, short)
 	TODOMINOR();
 }
 
-void NumToStringC(long theNum, Str255 theString)
+int NumToStringC(long theNum, Str255 theString)
 {
-	snprintf(theString, 256, "%ld", theNum);
+	return snprintf(theString, 256, "%ld", theNum);
 }
 
 //-----------------------------------------------------------------------------

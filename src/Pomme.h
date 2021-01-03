@@ -250,7 +250,7 @@ void SysBeep(short duration);
 
 void FlushEvents(short, short);
 
-void NumToStringC(long theNum, Str255 theString);
+int NumToStringC(long theNum, Str255 theString);
 
 //-----------------------------------------------------------------------------
 // Input

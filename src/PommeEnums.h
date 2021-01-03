@@ -155,9 +155,25 @@ enum EErrors
 
 enum EScriptManager
 {
-    smSystemScript = -1,
-    smCurrentScript = -2,
-    smAllScripts = -3
+	// Implicit script codes
+	smSystemScript		= -1,
+	smCurrentScript		= -2,
+	smAllScripts		= -3,
+
+	// Explicit script codes
+	smRoman				= 0,
+
+	// Language codes
+	langEnglish			= 0,	// smRoman script
+	langFrench			= 1,	// smRoman script
+	langGerman			= 2,	// smRoman script
+	langItalian			= 3,	// smRoman script
+	langDutch			= 4,	// smRoman script
+	langSwedish			= 5,	// smRoman script
+	langSpanish			= 6,	// smRoman script
+	langDanish			= 7,	// smRoman script
+	langPortuguese		= 8,	// smRoman script
+	langNorwegian		= 9,	// smRoman script
 };
 
 //-----------------------------------------------------------------------------

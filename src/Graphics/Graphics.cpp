@@ -87,13 +87,6 @@ static int penX = 0;
 static int penY = 0;
 
 // ---------------------------------------------------------------------------- -
-// Globals
-
-extern "C" {
-SDL_Window* gSDLWindow = nullptr;
-}
-
-// ---------------------------------------------------------------------------- -
 // Initialization
 
 CGrafPtr Pomme::Graphics::GetScreenPort(void)
@@ -101,51 +94,11 @@ CGrafPtr Pomme::Graphics::GetScreenPort(void)
 	return &screenPort->port;
 }
 
-void Pomme::Graphics::Init(
-		const char* windowTitle,
-		int windowWidth,
-		int windowHeight,
-		int msaaSamples)
+void Pomme::Graphics::Init()
 {
-	if (0 != SDL_Init(SDL_INIT_VIDEO))
-	{
-		throw std::runtime_error("Couldn't initialize SDL video subsystem.");
-	}
-
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-#ifndef _WIN32
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
-#endif
-
-	if (msaaSamples != 0)
-	{
-		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
-		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, msaaSamples);
-	}
-
-	gSDLWindow = SDL_CreateWindow(
-		windowTitle,
-		SDL_WINDOWPOS_UNDEFINED,
-		SDL_WINDOWPOS_UNDEFINED,
-		windowWidth,
-		windowHeight,
-		SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN);
-
-	if (!gSDLWindow)
-	{
-		throw std::runtime_error("Couldn't create SDL window.");
-	}
-
 	Rect boundsRect = {0, 0, 480, 640};
 	screenPort = std::make_unique<GrafPortImpl>(boundsRect);
 	curPort = screenPort.get();
-}
-
-void Pomme::Graphics::Shutdown()
-{
-	SDL_DestroyWindow(gSDLWindow);
-	gSDLWindow = nullptr;
 }
 
 // ---------------------------------------------------------------------------- -
@@ -703,7 +656,7 @@ void DrawChar(char c)
 // ----------------------------------------------------------------------------
 // Icons
 
-void Pomme::Graphics::SetWindowIconFromIcl8Resource(short icl8ID)
+void Pomme::Graphics::SetWindowIconFromIcl8Resource(SDL_Window* window, short icl8ID)
 {
 	Handle colorIcon = GetResource('icl8', icl8ID);
 	if (1024 != GetHandleSize(colorIcon))
@@ -740,7 +693,7 @@ void Pomme::Graphics::SetWindowIconFromIcl8Resource(short icl8ID)
 			*out++ = argb;
 		}
 	}
-	SDL_SetWindowIcon(gSDLWindow, icon);
+	SDL_SetWindowIcon(window, icon);
 	SDL_FreeSurface(icon);
 	DisposeHandle(colorIcon);
 	DisposeHandle(bwIcon);

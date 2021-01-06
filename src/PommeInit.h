@@ -9,15 +9,7 @@ namespace Pomme
 		virtual const char* what() const noexcept;
 	};
 
-	struct InitParams
-	{
-		const char* windowName;
-		int windowWidth;
-		int windowHeight;
-		int msaaSamples;
-	};
-
-	void Init(const InitParams& params);
+	void Init();
 
 	void Shutdown();
 }

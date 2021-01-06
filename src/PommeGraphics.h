@@ -3,6 +3,7 @@
 #include "PommeTypes.h"
 #include <istream>
 #include <vector>
+#include <SDL_video.h>
 
 namespace Pomme::Graphics
 {
@@ -41,11 +42,7 @@ namespace Pomme::Graphics
 		{ return (UInt32*) &data.data()[4 * (y * width + x)]; }
 	};
 
-	void Init(
-			const char* windowTitle,
-			int windowWidth,
-			int windowHeight,
-			int msaaSamples = 0);
+	void Init();
 
 	void Shutdown();
 
@@ -57,7 +54,7 @@ namespace Pomme::Graphics
 
 	CGrafPtr GetScreenPort(void);
 
-	void SetWindowIconFromIcl8Resource(short i);
+	void SetWindowIconFromIcl8Resource(SDL_Window* sdlWindow, short i);
 
 	inline int Width(const Rect& r)
 	{ return r.right - r.left; }

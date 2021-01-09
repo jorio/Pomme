@@ -250,7 +250,17 @@ void SysBeep(short duration);
 
 void FlushEvents(short, short);
 
-int NumToStringC(long theNum, Str255 theString);
+//-----------------------------------------------------------------------------
+// Text
+
+// Convert number to Pascal string (with length prefix byte)
+void NumToString(long theNum, Str255 theString);
+
+// Convert number to C string (zero-terminated)
+int NumToStringC(long theNum, Str255 theStringC);
+
+// Get substring in 'STR#' resource as C string (zero-terminated)
+void GetIndStringC(Str255 theStringC, short strListID, short index);
 
 //-----------------------------------------------------------------------------
 // Input

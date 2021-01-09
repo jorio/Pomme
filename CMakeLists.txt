@@ -38,6 +38,7 @@ set(POMME_SOURCES
 	${POMME_SRCDIR}/Sound/MACE.cpp
 	${POMME_SRCDIR}/Sound/SoundManager.cpp
 	${POMME_SRCDIR}/Sound/xlaw.cpp
+	${POMME_SRCDIR}/Text/TextUtilities.cpp
 	${POMME_SRCDIR}/Time/TimeManager.cpp
 	${POMME_SRCDIR}/Utilities/BigEndianIStream.cpp
 	${POMME_SRCDIR}/Utilities/FixedPool.h

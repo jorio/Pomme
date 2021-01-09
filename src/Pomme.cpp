@@ -45,11 +45,6 @@ void FlushEvents(short, short)
 	TODOMINOR();
 }
 
-int NumToStringC(long theNum, Str255 theString)
-{
-	return snprintf(theString, 256, "%ld", theNum);
-}
-
 //-----------------------------------------------------------------------------
 // Mouse cursor
 

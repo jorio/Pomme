@@ -143,6 +143,7 @@ typedef struct PixMap
 {
 	Rect bounds;
 	short pixelSize;
+	short rowBytes;
 	Ptr _impl;		// Points to ARGBPixmap
 } PixMap;
 typedef PixMap*							PixMapPtr;

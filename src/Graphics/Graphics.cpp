@@ -40,6 +40,7 @@ struct GrafPortImpl
 		macpm = {};
 		macpm.bounds = boundsRect;
 		macpm.pixelSize = 32;
+		macpm.rowBytes = (pixels.width * macpm.pixelSize / 8) | (1 << 15);		// bit 15 = 1: structure is PixMap, not BitMap
 		macpm._impl = (Ptr) &pixels;
 		macpmPtr = &macpm;
 	}

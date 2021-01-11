@@ -62,6 +62,10 @@ add_library(${PROJECT_NAME} ${POMME_SOURCES})
 
 find_package(SDL2 REQUIRED)
 
+add_compile_definitions(
+	"$<$<CONFIG:DEBUG>:_DEBUG>"
+)
+
 target_include_directories(${PROJECT_NAME} PRIVATE
 	${SDL2_INCLUDE_DIRS}
 	${POMME_SRCDIR}

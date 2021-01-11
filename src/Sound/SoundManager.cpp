@@ -523,6 +523,11 @@ OSErr SndDoImmediate(SndChannelPtr chan, const SndCommand* cmd)
 		impl.ApplyPitch();
 		break;
 
+	case rateMultiplierCmd:
+		impl.pitchMult = cmd->param2 / 65536.0;
+		impl.ApplyPitch();
+		break;
+
 	case pommeSetLoopCmd:
 		impl.source.SetLoop(cmd->param1);
 		break;

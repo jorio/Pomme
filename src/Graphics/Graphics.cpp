@@ -7,6 +7,7 @@
 #include <memory>
 #include <SDL.h>
 #include <SDL_opengl.h>
+#include <PommeFiles.h>
 
 using namespace Pomme;
 using namespace Pomme::Graphics;
@@ -123,14 +124,9 @@ static UInt32 GetEightColorPaletteValue(long color)
 // ---------------------------------------------------------------------------- -
 // PICT resources
 
-PicHandle GetPicture(short PICTresourceID)
+static PicHandle GetPictureFromStream(std::istream& stream, bool skip512)
 {
-	Handle rawResource = GetResource('PICT', PICTresourceID);
-	if (rawResource == nil)
-		return nil;
-	memstream substream(*rawResource, GetHandleSize(rawResource));
-	ARGBPixmap pm = ReadPICT(substream, false);
-	ReleaseResource(rawResource);
+	ARGBPixmap pm = ReadPICT(stream, skip512);
 
 	// Tack the data onto the end of the Picture struct,
 	// so that DisposeHandle frees both the Picture and the data.
@@ -145,6 +141,32 @@ PicHandle GetPicture(short PICTresourceID)
 
 	memcpy(pic.__pomme_pixelsARGB32, pm.data.data(), pm.data.size());
 
+	return ph;
+}
+
+PicHandle GetPicture(short PICTresourceID)
+{
+	Handle rawResource = GetResource('PICT', PICTresourceID);
+	if (rawResource == nil)
+		return nil;
+
+	memstream stream(*rawResource, GetHandleSize(rawResource));
+	PicHandle ph = GetPictureFromStream(stream, false);
+	ReleaseResource(rawResource);
+	return ph;
+}
+
+PicHandle GetPictureFromFile(const FSSpec* spec)
+{
+	short refNum;
+
+	OSErr error = FSpOpenDF(spec, fsRdPerm, &refNum);
+	if (error != noErr)
+		return nil;
+
+	auto& stream = Pomme::Files::GetStream(refNum);
+	PicHandle ph = GetPictureFromStream(stream, true);
+	FSClose(refNum);
 	return ph;
 }
 

@@ -114,7 +114,12 @@ void OffsetRect(Rect* r, short dh, short dv);
 // ----------------------------------------------------------------------------
 // QuickDraw 2D: PICT
 
+// Read picture from 'PICT' resource.
 PicHandle GetPicture(short PICTresourceID);
+
+// Read a picture from a PICT file on disk.
+// Pomme extension (not part of the original Toolbox API).
+PicHandle GetPictureFromFile(const FSSpec* spec);
 
 // ----------------------------------------------------------------------------
 // QuickDraw 2D: GWorld

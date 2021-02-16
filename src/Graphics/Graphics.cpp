@@ -659,19 +659,23 @@ void DrawChar(char c)
 
 void Pomme::Graphics::SetWindowIconFromIcl8Resource(SDL_Window* window, short icl8ID)
 {
-	Handle colorIcon = GetResource('icl8', icl8ID);
+	Handle colorIcon	= GetResource('icl8', icl8ID);
+	Handle bwIcon		= GetResource('ICN#', icl8ID);
+
 	if (1024 != GetHandleSize(colorIcon))
 	{
 		DisposeHandle(colorIcon);
+		DisposeHandle(bwIcon);
 		throw std::invalid_argument("icl8 resource has incorrect size");
 	}
 
-	Handle bwIcon = GetResource('ICN#', icl8ID);
 	if (256 != GetHandleSize(bwIcon))
 	{
+		DisposeHandle(colorIcon);
 		DisposeHandle(bwIcon);
 		throw std::invalid_argument("ICN# resource has incorrect size");
 	}
+
 	uint32_t* maskScanlines = (uint32_t*)(*bwIcon + 128);  // mask starts 128 bytes into ICN# resource
 	ByteswapInts(4, 32, maskScanlines);
 
@@ -694,8 +698,10 @@ void Pomme::Graphics::SetWindowIconFromIcl8Resource(SDL_Window* window, short ic
 			*out++ = argb;
 		}
 	}
+
 	SDL_SetWindowIcon(window, icon);
 	SDL_FreeSurface(icon);
+
 	DisposeHandle(colorIcon);
 	DisposeHandle(bwIcon);
 }

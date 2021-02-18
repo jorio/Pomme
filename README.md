@@ -9,3 +9,32 @@ This library was originally written to port Pangea Software's [Nanosaur](https:/
 ## License
 
 Please see [LICENSE.md](LICENSE.md)
+
+## Features
+
+Files and resources:
+- Access files on the host's filesystem with `FSSpec` structures.
+- Read/write data forks.
+- Access resources inside AppleDouble files (transparently presented as resource forks to application code).
+  
+QuickDraw 2D:
+- Load images from QuickDraw 2D `PICT` resources and files.
+- Manipulate ports.
+- Basic draw calls: lines, rects, bitmap text, CopyBits.
+  
+Sound Manager:
+- Load audio from AIFF & AIFF-C files and `snd ` resources.
+- Supported audio codecs: raw PCM, `ima4`, `MAC3`, `ulaw`, `alaw`.
+- Use SndChannels to output audio thanks to the built-in software mixer (requires SDL).
+
+QuickDraw 3D-ish:
+- Basic QD3D geometry structures and math routines. 
+- Load 3D model data from 3DMF files.
+- Please note: Accurate source compatibility with QD3D is out of scope for Pomme. For a faithful implementation of QD3D, look at [Quesa](https://github.com/jwwalker/quesa).
+
+Misc:
+- Memory management routines.
+- Limited playback of QuickTime `moov` files (only Cinepak is supported).
+- Byte-swapping routines inspired from [Python's `struct` format strings](https://docs.python.org/3/library/struct.html#struct-format-strings) to convert big-endian structs to little-endian.
+- Basic keyboard/mouse input via SDL.
+

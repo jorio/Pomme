@@ -51,12 +51,28 @@ set(POMME_SOURCES
 	${POMME_SRCDIR}/Utilities/StringUtils.h
 	${POMME_SRCDIR}/Utilities/structpack.cpp
 	${POMME_SRCDIR}/Utilities/structpack.h
-	${POMME_SRCDIR}/Video/Cinepak.cpp
-	${POMME_SRCDIR}/Video/Cinepak.h
-	${POMME_SRCDIR}/Video/moov.cpp
 	$<$<BOOL:${WIN32}>:${POMME_SRCDIR}/Platform/Windows/PommeWindows.cpp>
 	$<$<BOOL:${WIN32}>:${POMME_SRCDIR}/Platform/Windows/PommeWindows.h>
 )
+
+if (NOT(POMME_NO_VIDEO))
+	list(APPEND POMME_SOURCES
+		${POMME_SRCDIR}/Video/Cinepak.cpp
+		${POMME_SRCDIR}/Video/Cinepak.h
+		${POMME_SRCDIR}/Video/moov.cpp
+	)
+endif()
+
+if (NOT(POMME_NO_QD3D))
+	list(APPEND POMME_SOURCES
+			${POMME_SRCDIR}/QD3D/3DMFInternal.h
+			${POMME_SRCDIR}/QD3D/3DMFParser.cpp
+			${POMME_SRCDIR}/QD3D/QD3D.cpp
+			${POMME_SRCDIR}/QD3D/QD3D.h
+			${POMME_SRCDIR}/QD3D/QD3DMath.cpp
+			${POMME_SRCDIR}/QD3D/QD3DMath.h
+			)
+endif()
 
 add_library(${PROJECT_NAME} ${POMME_SOURCES})
 
@@ -79,10 +95,12 @@ if(MSVC)
 	target_compile_options(${PROJECT_NAME} PRIVATE
 		/EHa
 		/W4
+		/wd4068 # ignore unrecognized pragmas
 		/wd4100	# unreferenced formal parameter
 		/wd4201 # nonstandard extension
 		/wd4244 # conversion from double to float
 		/wd4458 # declaration of variable hides class member
+		/MP
 	)
 else()
 	target_compile_options(${PROJECT_NAME} PRIVATE
@@ -91,6 +109,7 @@ else()
 		-Wshadow
 		-Wno-multichar
 		-Wno-unused-parameter
+		-Wno-unknown-pragmas
 		-fexceptions
 	)
 endif()

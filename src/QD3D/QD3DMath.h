@@ -40,6 +40,7 @@ extern "C" {
 
 #include "QD3D.h"
 #include <math.h>
+#include <float.h>
 #include <string.h>
 
 #ifdef FLT_EPSILON
@@ -137,25 +138,6 @@ static inline void Q3Point3D_CrossProductTri(
 	result->z = (v1_x * v2_y) - (v1_y * v2_x);
 }
 
-static inline TQ3Vector3D* Q3Vector3D_Transform(
-		const TQ3Vector3D *vector3D,
-		const TQ3Matrix4x4 *matrix4x4,
-		TQ3Vector3D *result)
-{
-	// Save input to avoid problems when result is same as input
-	float x = vector3D->x;
-	float y = vector3D->y;
-	float z = vector3D->z;
-
-#define M(x,y) matrix4x4->value[x][y]
-	result->x = x*M(0,0) + y*M(1,0) + z*M(2,0);
-	result->y = x*M(0,1) + y*M(1,1) + z*M(2,1);
-	result->z = x*M(0,2) + y*M(1,2) + z*M(2,2);
-#undef M
-
-	return result;
-}
-
 static inline TQ3Point3D* Q3Point3D_Transform(
 		const TQ3Point3D *point3D,
 		const TQ3Matrix4x4 *matrix4x4,
@@ -210,6 +192,7 @@ static inline TQ3Point3D* Q3Point3D_TransformAffine(
 	return(result);
 }
 
+// This function's signature differs from vanilla QD3D's.
 void Q3Point3D_To3DTransformArray(
 		const TQ3Point3D		*inPoints3D,
 		const TQ3Matrix4x4		*matrix4x4,
@@ -270,6 +253,41 @@ static inline void Q3Vector2D_Normalize(
 	// makes no difference, but it prevents division by zero without a branch.
 	float theLength = Q3Vector2D_Length(v1) + kQ3MinFloat;
 	Q3Vector2D_Scale(v1, 1.0f / theLength, result);
+}
+
+static inline float Q3Vector2D_Cross(
+		const TQ3Vector2D* v1,
+		const TQ3Vector2D* v2)
+{
+	return (v1->x * v2->y) - (v1->y * v2->x);
+}
+
+//=============================================================================
+//      E3Vector2D_Transform : Transform 2D vector by 3x3 matrix.
+//-----------------------------------------------------------------------------
+//		Note :	'result' may be the same as 'vector2D'.
+//
+//				Note that the translation and perspective components of the
+//				matrix is ignored (as if it were really a 2x2 matrix).
+//
+//				Contrast with E3Point2D_Transform, which does the full 3x3
+//				transformation.
+//-----------------------------------------------------------------------------
+static inline TQ3Vector2D* Q3Vector2D_Transform(
+		const TQ3Vector2D *vector2D,
+		const TQ3Matrix3x3 *matrix3x3,
+		TQ3Vector2D *result)
+{
+	// Save input to avoid problems when result is same as input
+	float x = vector2D->x;
+	float y = vector2D->y;
+
+#define M(x,y) matrix3x3->value[x][y]
+	result->x = x*M(0,0) + y*M(1,0);
+	result->y = x*M(0,1) + y*M(1,1);
+#undef M
+
+	return(result);
 }
 
 //-----------------------------------------------------------------------------
@@ -335,6 +353,25 @@ static inline void Q3Vector3D_Normalize(
 	Q3Vector3D_Scale(v1, 1.0f / theLength, result);
 }
 
+static inline TQ3Vector3D* Q3Vector3D_Transform(
+		const TQ3Vector3D *vector3D,
+		const TQ3Matrix4x4 *matrix4x4,
+		TQ3Vector3D *result)
+{
+	// Save input to avoid problems when result is same as input
+	float x = vector3D->x;
+	float y = vector3D->y;
+	float z = vector3D->z;
+
+#define M(x,y) matrix4x4->value[x][y]
+	result->x = x*M(0,0) + y*M(1,0) + z*M(2,0);
+	result->y = x*M(0,1) + y*M(1,1) + z*M(2,1);
+	result->z = x*M(0,2) + y*M(1,2) + z*M(2,2);
+#undef M
+
+	return result;
+}
+
 //-----------------------------------------------------------------------------
 #pragma mark Q3Matrix3x3
 
@@ -370,6 +407,37 @@ static inline TQ3Matrix3x3* Q3Matrix3x3_SetTranslate(
 #undef M
 
 	return matrix3x3;
+}
+
+static inline TQ3Matrix3x3* Q3Matrix3x3_SetRotateAboutPoint(
+		TQ3Matrix3x3 *matrix3x3,
+		const TQ3Point2D *origin,
+		float angle)
+{
+	float cosAngle = cosf(angle);
+	float sinAngle = sinf(angle);
+
+#define M(x,y)	matrix3x3->value[x][y]
+#define Dx		origin->x
+#define Dy		origin->y
+
+	M(0,0) =  cosAngle;
+	M(0,1) =  sinAngle;
+	M(0,2) =  0.0f;
+
+	M(1,0) = -sinAngle;
+	M(1,1) =  cosAngle;
+	M(1,2) =  0.0f;
+
+	M(2,0) =  Dx - Dx*cosAngle + Dy*sinAngle;   // = Dx - Dx*M(0,0) - Dy*M(1,0)
+	M(2,1) =  Dy - Dx*sinAngle - Dy*cosAngle;   // = Dx - Dx*M(0,1) - Dy*M(1,1)
+	M(2,2) =  1.0f;
+
+#undef M
+#undef Dx
+#undef Dy
+
+	return(matrix3x3);
 }
 
 //-----------------------------------------------------------------------------
@@ -602,6 +670,62 @@ static inline TQ3Matrix4x4* Q3Matrix4x4_SetRotate_XYZ(
 	return(matrix4x4);
 }
 
+//=============================================================================
+//      E3Matrix4x4_SetRotateAboutPoint : Set 4x4 matrix to rotate about axes through
+//										  point and parallel to X, Y, Z axes
+//										  (in that order -- which is rarely useful).
+//-----------------------------------------------------------------------------
+static inline TQ3Matrix4x4* Q3Matrix4x4_SetRotateAboutPoint(
+		TQ3Matrix4x4 *matrix4x4,
+		const TQ3Point3D *origin,
+		float xAngle,
+		float yAngle,
+		float zAngle)
+{
+	float cosX = cosf(xAngle);
+	float sinX = sinf(xAngle);
+	float cosY = cosf(yAngle);
+	float sinY = sinf(yAngle);
+	float cosZ = cosf(zAngle);
+	float sinZ = sinf(zAngle);
+
+	float sinXsinY = sinX*sinY;
+	float cosXsinY = cosX*sinY;
+
+#define M(x,y)	matrix4x4->value[x][y]
+#define Dx		origin->x
+#define Dy		origin->y
+#define Dz		origin->z
+
+	M(0,0) =  cosY*cosZ;
+	M(0,1) =  cosY*sinZ;
+	M(0,2) = -sinY;
+	M(0,3) =  0.0f;
+
+	M(1,0) =  sinXsinY*cosZ - cosX*sinZ;
+	M(1,1) =  sinXsinY*sinZ + cosX*cosZ;
+	M(1,2) =  sinX*cosY;
+	M(1,3) =  0.0f;
+
+	M(2,0) =  cosXsinY*cosZ + sinX*sinZ;
+	M(2,1) =  cosXsinY*sinZ - sinX*cosZ;
+	M(2,2) =  cosX*cosY;
+	M(2,3) =  0.0f;
+
+	M(3,0) =  Dx - Dx*M(0,0) - Dy*M(1,0) - Dz*M(2,0);
+	M(3,1) =  Dy - Dx*M(0,1) - Dy*M(1,1) - Dz*M(2,1);
+	M(3,2) =  Dz - Dx*M(0,2) - Dy*M(1,2) - Dz*M(2,2);
+	M(3,3) =  1.0f;
+
+#undef M
+#undef Dx
+#undef Dy
+#undef Dz
+
+	return(matrix4x4);
+}
+
+
 TQ3Matrix4x4* Q3Matrix4x4_Transpose(
 		const TQ3Matrix4x4 *matrix4x4,
 		TQ3Matrix4x4 *result);
@@ -609,6 +733,15 @@ TQ3Matrix4x4* Q3Matrix4x4_Transpose(
 TQ3Matrix4x4* Q3Matrix4x4_Invert(
 		const TQ3Matrix4x4 *inMatrix,
 		TQ3Matrix4x4 *result);
+
+//-----------------------------------------------------------------------------
+#pragma mark Q3BoundingBox
+
+TQ3BoundingBox* Q3BoundingBox_SetFromPoints3D(
+		TQ3BoundingBox *bBox,
+		const TQ3Point3D *points3D,
+		TQ3Uns32 numPoints,
+		TQ3Uns32 structSize);
 
 #ifdef __cplusplus
 }

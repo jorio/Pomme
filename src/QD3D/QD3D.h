@@ -209,6 +209,7 @@ typedef struct TQ3ColorRGB
 	float					b;
 } TQ3ColorRGB;
 
+// WARNING: this structure differs from QD3D
 typedef struct TQ3Vertex3D
 {
 	TQ3Point3D				point;
@@ -220,6 +221,14 @@ typedef struct TQ3BoundingBox
 	TQ3Point3D				max;
 	TQ3Boolean				isEmpty;
 } TQ3BoundingBox;
+
+typedef struct TQ3BoundingSphere
+{
+	TQ3Point3D				origin;
+	float					radius;
+	TQ3Boolean				isEmpty;
+} TQ3BoundingSphere;
+
 
 typedef struct TQ3Matrix3x3
 {

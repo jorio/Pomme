@@ -9,6 +9,12 @@
 #include <QD3D/QD3D.h>
 #include "Utilities/BigEndianIStream.h"
 
+struct Q3MetaFileTOCEntry
+{
+	uint64_t offset;
+	uint32_t chunkType;
+};
+
 class Q3MetaFileParser
 {
 public:
@@ -25,8 +31,8 @@ private:
 	// Parse attribute array chunk
 	void Parse_atar(uint32_t chunkSize);
 
-	// Parse mipmap texture chunk
-	uint32_t Parse_txmm(uint32_t chunkSize);
+	// Parse mipmap/pixmap texture chunk
+	uint32_t Parse_txmm_or_txpm(uint32_t chunkType, uint32_t chunkSize);
 
 	TQ3MetaFile& metaFile;
 	std::istream& baseStream;
@@ -36,7 +42,7 @@ private:
 
 	TQ3TriMeshData* currentMesh;
 
-	std::map<uint32_t, uint64_t> referenceTOC;
+	std::map<uint32_t, Q3MetaFileTOCEntry> referenceTOC;
 	std::map<std::streampos, uint32_t> knownTextures;
 };
 

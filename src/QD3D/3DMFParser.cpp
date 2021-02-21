@@ -3,8 +3,9 @@
 #include "Pomme.h"
 #include "3DMFInternal.h"
 
-// Comment out the line below to get debug output from the 3DMF parser on stdout
-#define printf(...) do{}while(0)
+#if !(POMME_DEBUG_3DMF)
+	#define printf(...) do{}while(0)
+#endif
 
 class Q3MetaFile_EarlyEOFException : public std::exception
 {
@@ -155,7 +156,8 @@ uint32_t Q3MetaFileParser::Parse1Chunk()
 			Assert(chunkSize == 0, "illegal txsu size");
 			break;
 
-		case 'txmm':    // MipmapTexture
+		case 'txmm':	// MipmapTexture
+		case 'txpm':	// PixmapTexture
 		{
 			uint32_t internalTextureID;
 			if (knownTextures.find(chunkOffset) != knownTextures.end())
@@ -166,7 +168,7 @@ uint32_t Q3MetaFileParser::Parse1Chunk()
 			}
 			else
 			{
-				internalTextureID = Parse_txmm(chunkSize);
+				internalTextureID = Parse_txmm_or_txpm(chunkType, chunkSize);
 				knownTextures[chunkOffset] = internalTextureID;
 			}
 
@@ -188,7 +190,7 @@ uint32_t Q3MetaFileParser::Parse1Chunk()
 			uint32_t target = f.Read<uint32_t>();
 			printf("TOC#%d -----> %08lx", target, referenceTOC.at(target));
 			auto jumpBackTo = f.Tell();
-			f.Goto(referenceTOC.at(target));
+			f.Goto(referenceTOC.at(target).offset);
 			Parse1Chunk();
 			f.Goto(jumpBackTo);
 			break;
@@ -217,6 +219,7 @@ void Q3MetaFileParser::Parse3DMF()
 
 	uint16_t versionMajor = f.Read<uint16_t>();
 	uint16_t versionMinor = f.Read<uint16_t>();
+	Assert(versionMajor == 1 && (versionMinor == 5 || versionMinor == 6), "Unsupported 3DMF version");
 
 	uint32_t flags = f.Read<uint32_t>();
 	Assert(flags == 0, "Database or Stream aren't supported");
@@ -251,7 +254,7 @@ void Q3MetaFileParser::Parse3DMF()
 
 			printf("TOC: refID %d '%s' at %08lx\n", refID, Pomme::FourCCString(objType).c_str(), objLocation);
 
-			referenceTOC[refID] = objLocation;
+			referenceTOC[refID] = {objLocation, objType};
 		}
 	}
 
@@ -425,37 +428,67 @@ void Q3MetaFileParser::Parse_atar(uint32_t chunkSize)
 	}
 }
 
-uint32_t Q3MetaFileParser::Parse_txmm(uint32_t chunkSize)
+uint32_t Q3MetaFileParser::Parse_txmm_or_txpm(uint32_t chunkType, uint32_t chunkSize)
 {
-	Assert(chunkSize >= 8*4, "incorrect chunk header size");
+	size_t chunkHeaderSize = chunkType == 'txmm'? 8*4: 7*4;
+	Assert(chunkSize >= chunkHeaderSize, "incorrect chunk header size");
 
-	uint32_t useMipmapping	= f.Read<uint32_t>();
-	uint32_t pixelType		= f.Read<uint32_t>();
-	uint32_t bitOrder		= f.Read<uint32_t>();
-	uint32_t byteOrder		= f.Read<uint32_t>();
-	uint32_t width			= f.Read<uint32_t>();
-	uint32_t height			= f.Read<uint32_t>();
-	uint32_t rowBytes		= f.Read<uint32_t>();
-	uint32_t offset			= f.Read<uint32_t>();
+	uint32_t pixelType;
+	uint32_t bitOrder;
+	uint32_t byteOrder;
+	uint32_t width;
+	uint32_t height;
+	uint32_t rowBytes;
+
+	if (chunkType == 'txmm')
+	{
+		uint32_t useMipmapping	= f.Read<uint32_t>();
+		pixelType				= f.Read<uint32_t>();
+		bitOrder				= f.Read<uint32_t>();
+		byteOrder				= f.Read<uint32_t>();
+		width					= f.Read<uint32_t>();
+		height					= f.Read<uint32_t>();
+		rowBytes				= f.Read<uint32_t>();
+		uint32_t offset			= f.Read<uint32_t>();
+		Assert(!useMipmapping, "mipmapping not supported");
+		Assert(offset == 0, "unsupported texture offset");
+	}
+	else if (chunkType == 'txpm')
+	{
+		width			= f.Read<uint32_t>();
+		height			= f.Read<uint32_t>();
+		rowBytes		= f.Read<uint32_t>();
+		f.Skip(4); //pixelSize		= f.Read<uint32_t>();
+		pixelType		= f.Read<uint32_t>();
+		bitOrder		= f.Read<uint32_t>();
+		byteOrder		= f.Read<uint32_t>();
+	}
+	else
+	{
+		Assert(false, "Parse_txmm_or_txpm: Illegal chunkType");
+	}
 
 	uint32_t imageSize = rowBytes * height;
 	if ((imageSize & 3) != 0)
 		imageSize = (imageSize & 0xFFFFFFFC) + 4;
 
-	Assert(chunkSize == 8*4 + imageSize, "incorrect chunk size");
+	Assert(chunkSize == chunkHeaderSize + imageSize, "incorrect chunk size");
+	Assert(bitOrder == kQ3EndianBig, "unsupported bit order");
 
-
-	Assert(!useMipmapping, "mipmapping not supported");
+#if POMME_DEBUG_3DMF
 	printf("%d*%d rb=%d", width, height, rowBytes);
 
-	static const char* pixelTypeDescriptions[] = { "RGB32", "ARGB32", "RGB16", "ARGB16", "RGB16_565", "RGB24" };
-	if (pixelType < kQ3PixelTypeRGB24)
-		printf(" %s", pixelTypeDescriptions[pixelType]);
-	else
-		printf(" UNKNOWN_PIXELTYPE");
-
-	Assert(offset == 0, "unsupported texture offset");
-	Assert(bitOrder == kQ3EndianBig, "unsupported bit order");
+	switch (pixelType)
+	{
+		case kQ3PixelTypeRGB32:		printf(" RGB32");				break;
+		case kQ3PixelTypeARGB32:	printf(" ARGB32");				break;
+		case kQ3PixelTypeRGB16:		printf(" RGB16");				break;
+		case kQ3PixelTypeARGB16:	printf(" ARGB16");				break;
+		case kQ3PixelTypeRGB16_565:	printf(" RGB16_565");			break;
+		case kQ3PixelTypeRGB24:		printf(" RGB24");				break;
+		default:					printf(" UnknownPixelType");	break;
+	}
+#endif
 
 	// Find bytes per pixel
 	int bytesPerPixel = 0;
@@ -467,8 +500,6 @@ uint32_t Q3MetaFileParser::Parse_txmm(uint32_t chunkSize)
 		Assert(false, "unrecognized pixel type");
 
 	int trimmedRowBytes = bytesPerPixel * width;
-
-
 
 	uint32_t newTextureID = metaFile.numTextures;
 

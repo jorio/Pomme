@@ -280,32 +280,53 @@ Boolean Button(void);
 //-----------------------------------------------------------------------------
 // Memory: No-op
 
-void MaxApplZone(void);
+// No-op in Pomme.
+static inline void MaxApplZone(void) {}
 
-void MoreMasters(void);
+// No-op in Pomme.
+static inline void MoreMasters(void) {}
 
-Size CompactMem(Size);
+// No-op in Pomme.
+static inline Size CompactMem(Size size) { return size; }
 
+// No-op in Pomme.
 // Compact system heap zone manually.
-Size CompactMemSys(Size);
+static inline Size CompactMemSys(Size size) { return size; }
 
-void PurgeMem(Size);
+// No-op in Pomme.
+static inline void PurgeMem(Size size) {}
 
-void PurgeMemSys(Size);
+// No-op in Pomme.
+static inline void PurgeMemSys(Size size) {}
 
-Size MaxMem(Size* grow);
+// No-op in Pomme.
+// TODO: do something about `grow` and return a large integer to make it look like we have tons of memory.
+static inline Size MaxMem(Size* grow) { return 0; }
 
-void HNoPurge(Handle);
+// No-op in Pomme.
+static inline void HNoPurge(Handle handle) {}	// no-op
 
-void HLock(Handle);
+// No-op in Pomme.
+static inline void HLock(Handle handle) {}	// no-op
 
-void HLockHi(Handle);
+// No-op in Pomme.
+static inline void HLockHi(Handle handle) {}	// no-op
 
-void NoPurgePixels(PixMapHandle);
+// No-op in Pomme.
+static inline void HUnlock(Handle handle) {}	// no-op
 
+// No-op in Pomme.
+static inline void NoPurgePixels(PixMapHandle handle) {}	// no-op
+
+// No-op in Pomme.
 // To prevent the base address for an offscreen pixel image from being moved
 // while you draw into or copy from its pixel map.
-Boolean LockPixels(PixMapHandle); // shall return true always
+static inline Boolean LockPixels(PixMapHandle handle) { return true; }	// no-op; shall always return true
+
+// No-op in Pomme.
+// If the Memory Manager started up in 24-bit mode, strips flag bits from 24-bit memory addresses;
+// otherwise (in 32-bit mode), returns the address unchanged.
+static inline Ptr StripAddress(Ptr ptr) { return ptr; }  // no-op
 
 //-----------------------------------------------------------------------------
 // Memory: Handle

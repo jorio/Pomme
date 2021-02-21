@@ -235,16 +235,6 @@ Ptr GetPixBaseAddr(PixMapHandle pm)
 	return (Ptr) GetImpl(*pm).data.data();
 }
 
-Boolean LockPixels(PixMapHandle pm)
-{
-	return true;
-}
-
-void UnlockPixels(PixMapHandle pm)
-{
-	// no-op
-}
-
 // ---------------------------------------------------------------------------- -
 // Port
 

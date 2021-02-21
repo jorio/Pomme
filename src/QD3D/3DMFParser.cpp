@@ -398,18 +398,17 @@ void Q3MetaFileParser::Parse_atar(uint32_t chunkSize)
 	}
 	else if (isVertexAttribute && attributeType == kQ3AttributeTypeDiffuseColor)	// used in Bugdom's Global_Models2.3dmf
 	{
-		Assert(false, "per-vertex diffuse color not supported in Nanosaur");
-#if 0
 		printf("vertex diffuse");
 //		Assert(positionInArray == 0, "PIA must be 0 for colors");
-		Assert(currentMesh->vertexNormals, "current mesh has no vertex color array");
+		Assert(!currentMesh->vertexColors, "current mesh already had a vertex color array");
+		currentMesh->vertexColors = __Q3Alloc<TQ3ColorRGBA>(currentMesh->numPoints, 'TMvc');
 		for (int i = 0; i < currentMesh->numPoints; i++)
 		{
 			currentMesh->vertexColors[i].r = f.Read<float>();
 			currentMesh->vertexColors[i].g = f.Read<float>();
 			currentMesh->vertexColors[i].b = f.Read<float>();
+			currentMesh->vertexColors[i].a = 1.0f;
 		}
-#endif
 	}
 	else if (isTriangleAttribute && attributeType == kQ3AttributeTypeNormal)		// face normals
 	{

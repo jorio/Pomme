@@ -350,7 +350,7 @@ void Q3Pixmap_Dispose(TQ3Pixmap*);
 
 #pragma mark -
 
-TQ3TriMeshData* Q3TriMeshData_New(int numTriangles, int numPoints);
+TQ3TriMeshData* Q3TriMeshData_New(int numTriangles, int numPoints, bool perVertexColors);
 
 TQ3TriMeshData* Q3TriMeshData_Duplicate(const TQ3TriMeshData* source);
 

@@ -290,7 +290,11 @@ void Q3MetaFileParser::Parse_tmsh(uint32_t chunkSize)
 	Assert(0 == numEdges, "edges are not supported");
 	Assert(0 == numEdgeAttributes, "edge attributes are not supported");
 
-	currentMesh = Q3TriMeshData_New(numTriangles, numVertices);
+	currentMesh = Q3TriMeshData_New(
+			numTriangles,
+			numVertices,
+			false			// Don't allocate per-vertex colors yet. We'll allocate them later if the mesh needs them.
+	);
 
 	__Q3EnlargeArray(metaFile.meshes, metaFile.numMeshes, 'MLST');
 	metaFile.meshes[metaFile.numMeshes-1] = currentMesh;

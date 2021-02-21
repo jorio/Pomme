@@ -148,7 +148,7 @@ void Q3Pixmap_Dispose(TQ3Pixmap* pixmap)
 
 #pragma mark -
 
-TQ3TriMeshData* Q3TriMeshData_New(int numTriangles,	int numPoints)
+TQ3TriMeshData* Q3TriMeshData_New(int numTriangles,	int numPoints, bool perVertexColors)
 {
 	TQ3TriMeshData* mesh	= __Q3Alloc<TQ3TriMeshData>(1, 'MESH');
 
@@ -158,16 +158,22 @@ TQ3TriMeshData* Q3TriMeshData_New(int numTriangles,	int numPoints)
 	mesh->triangles			= __Q3Alloc<TQ3TriMeshTriangleData>(numTriangles, 'TMtr');
 	mesh->vertexNormals		= __Q3Alloc<TQ3Vector3D>(numPoints, 'TMvn');
 	mesh->vertexUVs			= __Q3Alloc<TQ3Param2D>(numPoints, 'TMuv');
-	mesh->vertexColors		= nullptr;
+	mesh->vertexColors		= perVertexColors? __Q3Alloc<TQ3ColorRGBA>(numPoints, 'TMvc'): nullptr;
 	mesh->diffuseColor		= {1, 1, 1, 1};
 	mesh->texturingMode		= kQ3TexturingModeOff;
 	mesh->internalTextureID	= -1;
+	mesh->bBox				= {{0,0,0}, {0,0,0}, kQ3True};	// empty
 
 	for (int i = 0; i < numPoints; i++)
 	{
 		mesh->vertexNormals[i] = {0, 1, 0};
 		mesh->vertexUVs[i] = {.5f, .5f};
-//		triMeshData->vertexColors[i] = {1, 1, 1, 1};
+	}
+
+	if (perVertexColors)
+	{
+		for (int i = 0; i < numPoints; i++)
+			mesh->vertexColors[i] = {1, 1, 1, 1};
 	}
 
 	return mesh;

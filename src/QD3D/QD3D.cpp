@@ -160,8 +160,8 @@ TQ3TriMeshData* Q3TriMeshData_New(int numTriangles,	int numPoints)
 	mesh->vertexUVs			= __Q3Alloc<TQ3Param2D>(numPoints, 'TMuv');
 	mesh->vertexColors		= nullptr;
 	mesh->diffuseColor		= {1, 1, 1, 1};
-	mesh->hasTexture		= false;
-	mesh->textureHasTransparency = false;
+	mesh->texturingMode		= kQ3TexturingModeOff;
+	mesh->internalTextureID	= -1;
 
 	for (int i = 0; i < numPoints; i++)
 	{

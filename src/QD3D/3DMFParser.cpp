@@ -172,9 +172,11 @@ uint32_t Q3MetaFileParser::Parse1Chunk()
 
 			if (currentMesh)
 			{
-				Assert(!currentMesh->hasTexture, "txmm: current mesh already has a texture");
+				Assert(currentMesh->internalTextureID < 0, "txmm: current mesh already has a texture");
+				Assert(currentMesh->texturingMode == kQ3TexturingModeOff, "txmm: current mesh already has a texturing mode");
+
 				currentMesh->internalTextureID = internalTextureID;
-				currentMesh->hasTexture = true;
+				currentMesh->texturingMode = kQ3TexturingModeInvalid;	// set texturing mode to invalid because we don't know if the texture is opaque yet
 			}
 
 			break;

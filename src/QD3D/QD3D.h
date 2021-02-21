@@ -47,6 +47,16 @@ typedef enum
 	kQ3StatusSize32                             = 0xFFFFFFFF
 } TQ3Status;
 
+// WARNING: this enum did not exist in QD3D
+typedef enum
+{
+	kQ3TexturingModeInvalid						= -1,
+	kQ3TexturingModeOff							= 0,
+	kQ3TexturingModeOpaque,
+	kQ3TexturingModeAlphaTest,
+	kQ3TexturingModeAlphaBlend,
+	kQ3TexturingModeSize32						= 0xFFFFFFFF,
+} TQ3TexturingMode;
 
 enum TQ3AttributeTypes
 {
@@ -266,8 +276,7 @@ typedef struct TQ3TriMeshData
 
 	TQ3BoundingBox								bBox;
 
-	bool										hasTexture;
-	bool										textureHasTransparency;		// TODO
+	TQ3TexturingMode							texturingMode;
 	int											internalTextureID;
 	uint32_t									glTextureName;
 

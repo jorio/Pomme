@@ -159,6 +159,32 @@ typedef GrafPort                        CGrafPort;
 typedef GrafPtr							CGrafPtr;
 typedef CGrafPtr						GWorldPtr;
 
+typedef struct ColorSpec
+{
+	short								value;
+	RGBColor							rgb;
+} ColorSpec;
+typedef ColorSpec*						ColorSpecPtr;
+
+typedef struct ColorInfo
+{
+	RGBColor							ciRGB;
+	short								ciUsage;
+	short								ciTolerance;
+	short								ciDataFields[3];
+} ColorInfo;
+typedef ColorInfo*						ColorInfoPtr;
+typedef ColorInfoPtr*					ColorInfoHandle;
+
+typedef struct Palette
+{
+	short								pmEntries;				// entries in pmTable
+	short								pmDataFields[7];		// private fields
+	ColorInfo							pmInfo[1];
+} Palette;
+typedef Palette*						PalettePtr;
+typedef PalettePtr*						PaletteHandle;
+
 //-----------------------------------------------------------------------------
 // Sound Manager types
 

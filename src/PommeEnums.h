@@ -460,3 +460,19 @@ enum
 	ditherCopy = 64,
 	transparent = 36
 };
+
+enum
+{
+	pmCourteous							= 0x0000,	// Courteous color
+	pmTolerant							= 0x0002,	// Tolerant color
+	pmAnimated							= 0x0004,	// Animated color
+	pmExplicit							= 0x0008,	// Explicit color
+	pmWhite								= 0x0010,	// Use on 1-bit devices
+	pmBlack								= 0x0020,	// Use on 1-bit devices
+	pmInhibitG2							= 0x0100,
+	pmInhibitC2							= 0x0200,
+	pmInhibitG4							= 0x0400,
+	pmInhibitC4							= 0x0800,
+	pmInhibitG8							= 0x1000,
+	pmInhibitC8							= 0x2000,
+};

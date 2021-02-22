@@ -352,6 +352,9 @@ void SetHandleSize(Handle, Size);
 
 void DisposeHandle(Handle);
 
+// Allocates a handle of the given size and copies the contents of srcPtr into it
+OSErr PtrToHand(const void* srcPtr, Handle* dstHndl, Size size);
+
 //-----------------------------------------------------------------------------
 // Memory: Ptr
 

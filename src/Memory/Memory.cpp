@@ -97,6 +97,26 @@ void DisposeHandle(Handle h)
 	blocks.Dispose(b);
 }
 
+OSErr PtrToHand(const void* srcPtr, Handle* dstHndl, Size size)
+{
+	if (!dstHndl
+		|| (!srcPtr && size > 0)
+		|| size < 0)
+	{
+		return paramErr;
+	}
+
+	Handle h = NewHandle(size);
+	if (!h)
+		return memFullErr;
+
+	*dstHndl = h;
+
+	memcpy(*h, srcPtr, size);
+
+	return noErr;
+}
+
 //-----------------------------------------------------------------------------
 // Memory: Ptr
 

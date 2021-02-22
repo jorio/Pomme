@@ -122,6 +122,15 @@ static UInt32 GetEightColorPaletteValue(long color)
 }
 
 // ---------------------------------------------------------------------------- -
+// Errors
+
+OSErr QDError(void)
+{
+	TODOMINOR();
+	return noErr;
+}
+
+// ---------------------------------------------------------------------------- -
 // PICT resources
 
 static PicHandle GetPictureFromStream(std::istream& stream, bool skip512)

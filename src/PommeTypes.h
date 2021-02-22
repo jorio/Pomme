@@ -159,12 +159,16 @@ typedef GrafPort                        CGrafPort;
 typedef GrafPtr							CGrafPtr;
 typedef CGrafPtr						GWorldPtr;
 
+//-----------------------------------------------------------------------------
+// QuickDraw 2D: Color Manager
+
 typedef struct ColorSpec
 {
 	short								value;
 	RGBColor							rgb;
 } ColorSpec;
 typedef ColorSpec*						ColorSpecPtr;
+typedef ColorSpec						CSpecArray[1];
 
 typedef struct ColorInfo
 {
@@ -184,6 +188,16 @@ typedef struct Palette
 } Palette;
 typedef Palette*						PalettePtr;
 typedef PalettePtr*						PaletteHandle;
+
+typedef struct ColorTable
+{
+	SInt32								ctSeed;
+	short								ctFlags;
+	short								ctSize;
+	CSpecArray							ctTable;
+} ColorTable;
+typedef ColorTable*						CTabPtr;
+typedef CTabPtr*						CTabHandle;
 
 //-----------------------------------------------------------------------------
 // Sound Manager types

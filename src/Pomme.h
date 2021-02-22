@@ -107,6 +107,11 @@ long SizeResource(Handle);
 void Pomme_StartDumpingResources(const char* hostDestinationPath);
 
 //-----------------------------------------------------------------------------
+// QuickDraw 2D: Errors
+
+OSErr QDError(void);
+
+//-----------------------------------------------------------------------------
 // QuickDraw 2D: Shapes
 
 void SetRect(Rect* r, short left, short top, short right, short bottom);
@@ -247,6 +252,25 @@ void DamagePortRegion(const Rect*);
 // Writes the current port to a Targa image.
 // Pomme extension (not part of the original Toolbox API).
 void DumpPortTGA(const char* path);
+
+//-----------------------------------------------------------------------------
+// QuickDraw 2D: Color Manager
+
+void ProtectEntry(short index, Boolean protect);
+
+void ReserveEntry(short index, Boolean reserve);
+
+void SetEntries(short start, short count, CSpecArray aTable);
+
+void GetEntryColor(PaletteHandle srcPalette, short srcEntry, RGBColor* dstRGB);
+
+void SetEntryColor(PaletteHandle dstPalette, short dstEntry, const RGBColor* srcRGB);
+
+PaletteHandle NewPalette(short entries, CTabHandle srcColors, short srcUsage, short srcTolerance);
+
+void CopyPalette(PaletteHandle srcPalette, PaletteHandle dstPalette, short srcEntry,short dstEntry, short dstLength);
+
+void RestoreDeviceClut(GDHandle gdh);
 
 //-----------------------------------------------------------------------------
 // Misc

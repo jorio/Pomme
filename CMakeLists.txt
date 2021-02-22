@@ -25,6 +25,7 @@ set(POMME_SOURCES
 	${POMME_SRCDIR}/Files/Volume.h
 	${POMME_SRCDIR}/Graphics/ARGBPixmap.cpp
 	${POMME_SRCDIR}/Graphics/Color.cpp
+	${POMME_SRCDIR}/Graphics/ColorManager.cpp
 	${POMME_SRCDIR}/Graphics/Graphics.cpp
 	${POMME_SRCDIR}/Graphics/PICT.cpp
 	${POMME_SRCDIR}/Graphics/SysFont.h

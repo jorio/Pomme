@@ -338,6 +338,10 @@ Handle NewHandle(Size);
 // Allocate prezeroed memory
 Handle NewHandleClear(Size);
 
+Handle NewHandleSys(Size);
+
+Handle NewHandleSysClear(Size);
+
 // Allocate temp memory
 Handle TempNewHandle(Size, OSErr*);
 

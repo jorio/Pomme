@@ -59,6 +59,16 @@ Handle NewHandleClear(Size s)
 	return h;
 }
 
+Handle NewHandleSys(Size s)
+{
+	return NewHandle(s);
+}
+
+Handle NewHandleSysClear(Size s)
+{
+	return NewHandleSysClear(s);
+}
+
 Handle TempNewHandle(Size s, OSErr* err)
 {
 	Handle h = NewHandle(s);

@@ -4,6 +4,8 @@
 #include "PommeEnums.h"
 #include "PommeDebug.h"
 
+#include <stddef.h>
+
 //-----------------------------------------------------------------------------
 // Structure unpacking
 

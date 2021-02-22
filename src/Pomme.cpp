@@ -3,7 +3,6 @@
 
 #include "Pomme.h"
 #include "PommeInit.h"
-#include "PommeTime.h"
 #include "PommeFiles.h"
 #include "PommeGraphics.h"
 #include "PommeSound.h"
@@ -68,7 +67,6 @@ void ShowCursor()
 
 void Pomme::Init()
 {
-	Pomme::Time::Init();
 	Pomme::Files::Init();
 	Pomme::Graphics::Init();
 	Pomme::Sound::Init();

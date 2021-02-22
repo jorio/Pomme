@@ -1,42 +1,41 @@
 #include "Pomme.h"
-#include "PommeTime.h"
 #include "PommeTypes.h"
-#include "PommeDebug.h"
 
 #include <chrono>
-#include <iostream>
 #include <ctime>
-#include <iomanip>
 
-std::chrono::time_point<std::chrono::high_resolution_clock> bootTP;
+using namespace std::chrono;
 
-// timestamp (from unix epoch) of the mac epoch, Jan 1, 1904, 00:00:00
-constexpr int JANUARY_1_1904 = -2'082'844'800;
+// System time point on application start
+static const time_point<high_resolution_clock> gBootTimePoint = high_resolution_clock::now();
+
+// Timestamp of the Mac epoch (Jan 1, 1904, 00:00:00), relative to UNIX epoch (Jan 1, 1970, 00:00:00)
+static constexpr int JANUARY_1_1904 = -2'082'844'800;
+
+static int64_t GetMicrosecondsSinceBoot()
+{
+	auto now = high_resolution_clock::now();
+	microseconds usecs = duration_cast<microseconds>(now - gBootTimePoint);
+	return usecs.count();
+}
 
 //-----------------------------------------------------------------------------
 // Time Manager
-
-void Pomme::Time::Init()
-{
-	bootTP = std::chrono::high_resolution_clock::now();
-}
 
 void GetDateTime(unsigned long* secs)
 {
 	*secs = (unsigned long) (std::time(nullptr) + JANUARY_1_1904);
 }
 
-void Microseconds(UnsignedWide* usecs)
+void Microseconds(UnsignedWide* usecsOut)
 {
-	auto now = std::chrono::high_resolution_clock::now();
-	auto usecs1 = std::chrono::duration_cast<std::chrono::microseconds>(now - bootTP);
-	auto usecs2 = usecs1.count();
-	usecs->lo = usecs2 & 0xFFFFFFFFL;
-	usecs->hi = (usecs2 >> 32) & 0xFFFFFFFFL;
+	auto usecs = GetMicrosecondsSinceBoot();
+	usecsOut->lo = (usecs      ) & 0xFFFFFFFFL;
+	usecsOut->hi = (usecs >> 32) & 0xFFFFFFFFL;
 }
 
 UInt32 TickCount()
 {
-	TODO();
-	return 0;
+	// A tick is approximately 1/60 of a second
+	return (UInt32) (60L * GetMicrosecondsSinceBoot() / 1'000'000L);
 }

@@ -15,7 +15,6 @@ set(POMME_SOURCES
 	${POMME_SRCDIR}/PommeInit.h
 	${POMME_SRCDIR}/PommeInput.h
 	${POMME_SRCDIR}/PommeSound.h
-	${POMME_SRCDIR}/PommeTime.h
 	${POMME_SRCDIR}/PommeTypes.h
 	${POMME_SRCDIR}/PommeVideo.h
 	${POMME_SRCDIR}/Files/Files.cpp

@@ -12,6 +12,16 @@ enum EFSPermissions
 };
 
 //-----------------------------------------------------------------------------
+// Position mode constants
+
+enum {
+	fsAtMark = 0,
+	fsFromStart = 1,
+	fsFromLEOF = 2,
+	fsFromMark = 3
+};
+
+//-----------------------------------------------------------------------------
 // Folder types
 
 enum

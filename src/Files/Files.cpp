@@ -351,9 +351,9 @@ OSErr GetFPos(short refNum, long* filePos)
 	return noErr;
 }
 
-OSErr SetFPos(short refNum, long filePos)
+OSErr SetFPos(short refNum, short posMode, long filePos)
 {
-	TODO();
+	TODOFATAL();
 	return unimpErr;
 }
 

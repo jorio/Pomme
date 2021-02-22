@@ -382,9 +382,11 @@ UInt32 TickCount();
 //-----------------------------------------------------------------------------
 // Mouse cursor
 
-void HideCursor();
+void InitCursor(void);
 
-void InitCursor();
+void HideCursor(void);
+
+void ShowCursor(void);
 
 //-----------------------------------------------------------------------------
 // Sound Manager

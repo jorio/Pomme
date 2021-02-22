@@ -58,6 +58,11 @@ void HideCursor()
 	SDL_ShowCursor(0);
 }
 
+void ShowCursor()
+{
+	SDL_ShowCursor(1);
+}
+
 //-----------------------------------------------------------------------------
 // Our own init
 

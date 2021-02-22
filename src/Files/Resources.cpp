@@ -207,6 +207,13 @@ short FSpOpenResFile(const FSSpec* spec, char permission)
 	return slot;
 }
 
+short OpenResFile(const char* cName)
+{
+	FSSpec spec;
+	FSMakeFSSpec(0, 0, cName, &spec);
+	return FSpOpenResFile(&spec, fsRdPerm);
+}
+
 void UseResFile(short refNum)
 {
 	// See MoreMacintoshToolbox:1-69
@@ -311,6 +318,11 @@ void RemoveResource(Handle theResource)
 }
 
 void AddResource(Handle theData, ResType theType, short theID, const char* name)
+{
+	TODO();
+}
+
+void ChangedResource(Handle theResource)
 {
 	TODO();
 }

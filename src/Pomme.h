@@ -29,7 +29,7 @@ extern "C"
 #endif
 
 //-----------------------------------------------------------------------------
-// FSSpec
+// File/volume management
 
 OSErr FSMakeFSSpec(short vRefNum, long dirID, const char* cstrFileName, FSSpec* spec);
 
@@ -41,6 +41,16 @@ OSErr FSpOpenDF(const FSSpec* spec, char permission, short* refNum);
 // Open a file's resource fork
 OSErr FSpOpenRF(const FSSpec* spec, char permission, short* refNum);
 
+// Open a file's data fork with fsRdPerm (TODO: it should be fsCurPerm, but we don't support fsCurPerm yet)
+// in directory 0 of the given volume. It is legal to pass in a colon-separated hierarchical path in cName.
+// (Note: this is an ancient function that predates HFS - IM vol II, 1985)
+OSErr FSOpen(const char* cName, short vRefNum, short* refNum);
+
+// Open a file's resource fork with fsRdPerm (TODO: it should be fsCurPerm, but we don't support fsCurPerm yet)
+// in directory 0 of the application's volume. It is legal to pass in a colon-separated hierarchical path in cName.
+// (Note: this is an ancient function that predates HFS - IM vol II, 1985)
+short OpenResFile(const char* cName);
+
 OSErr FSpCreate(const FSSpec* spec, OSType creator, OSType fileType, ScriptCode scriptTag);
 
 OSErr FSpDelete(const FSSpec* spec);
@@ -50,6 +60,8 @@ OSErr ResolveAlias(const FSSpec* spec, AliasHandle alias, FSSpec* target, Boolea
 OSErr FindFolder(short vRefNum, OSType folderType, Boolean createFolder, short* foundVRefNum, long* foundDirID);
 
 OSErr DirCreate(short vRefNum, long parentDirID, const char* cstrDirectoryName, long* createdDirID);
+
+OSErr GetVol(char* outVolNameC, short* vRefNum);
 
 //-----------------------------------------------------------------------------
 // File I/O
@@ -92,6 +104,8 @@ void ReleaseResource(Handle theResource);
 void RemoveResource(Handle theResource);
 
 void AddResource(Handle theData, ResType theType, short theID, const char* name);
+
+void ChangedResource(Handle theResource);
 
 void WriteResource(Handle theResource);
 

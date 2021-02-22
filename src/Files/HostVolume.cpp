@@ -70,7 +70,7 @@ long HostVolume::GetDirectoryID(const fs::path& dirPath)
 
 fs::path HostVolume::ToPath(long parID, const std::string& name)
 {
-	fs::path path = directories[parID] / AsU8(name);
+	fs::path path = directories.at(parID) / AsU8(name);
 	return path.lexically_normal();
 }
 
@@ -213,7 +213,7 @@ OSErr HostVolume::FSMakeFSSpec(long dirID, const std::string& fileName, FSSpec* 
 		throw std::runtime_error("HostVolume::FSMakeFSSpec: directory ID not registered.");
 	}
 
-	auto path = directories[dirID];
+	auto path = directories.at(dirID);
 	auto suffix = fileName;
 
 	// Case-insensitive sanitization

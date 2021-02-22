@@ -151,6 +151,13 @@ OSErr FSpOpenRF(const FSSpec* spec, char permission, short* refNum)
 	return OpenFork(spec, ForkType::ResourceFork, permission, refNum);
 }
 
+OSErr FSOpen(const char* cName, short vRefNum, short* refNum)
+{
+	FSSpec spec;
+	FSMakeFSSpec(vRefNum, 0, cName, &spec);
+	return FSpOpenDF(&spec, fsRdPerm, refNum);
+}
+
 OSErr FindFolder(short vRefNum, OSType folderType, Boolean createFolder, short* foundVRefNum, long* foundDirID)
 {
 	if (vRefNum != kOnSystemDisk)
@@ -281,6 +288,15 @@ OSErr ResolveAlias(const FSSpec* spec, AliasHandle alias, FSSpec* target, Boolea
 	auto targetFilename = f.ReadPascalString_FixedLengthRecord(63);
 
 	return FSMakeFSSpec(spec->vRefNum, spec->parID, targetFilename.c_str(), target);
+}
+
+OSErr GetVol(char* outVolNameC, short* vRefNum)
+{
+	if (vRefNum)
+		*vRefNum = 0;
+	if (outVolNameC)
+		*outVolNameC = '\0';
+	return nsvErr;
 }
 
 OSErr FSRead(short refNum, long* count, Ptr buffPtr)

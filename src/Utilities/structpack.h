@@ -28,24 +28,44 @@ int ByteswapStructs(const char* format, int structSize, int structCount, void* b
 
 int ByteswapInts(int intSize, int intCount, void* buffer);
 
-static inline uint16_t Byteswap16(const void* p)
+static inline uint16_t Byteswap16(const void* data)
 {
-	uint16_t v;
-	v =
-		(*(const uint8_t*) p)
-		| ((*(const uint8_t*) p + 1) << 8);
-	return v;
+	const uint8_t* p = (uint8_t*) data;
+	return	( p[0] << 8 )
+		|	( p[1]      );
 }
 
-static inline uint32_t Byteswap32(const void* p)
+static inline int16_t Byteswap16Signed(const void* data)
 {
-	uint32_t v;
-	v =
-		(*(const uint8_t*) p)
-		| ((*(const uint8_t*) p + 1) << 8)
-		| ((*(const uint8_t*) p + 2) << 16)
-		| ((*(const uint8_t*) p + 3) << 24);
-	return v;
+	return (int16_t) Byteswap16(data);
+}
+
+static inline int32_t Byteswap16SignedRW(void* data)
+{
+	int16_t result = Byteswap16Signed(data);
+	*(int16_t*) data = result;
+	return result;
+}
+
+static inline uint32_t Byteswap32(const void* data)
+{
+	const uint8_t* p = (uint8_t*) data;
+	return	( p[0] << 24 )
+		|	( p[1] << 16 )
+		|	( p[2] <<  8 )
+		|	( p[3]       );
+}
+
+static inline int32_t Byteswap32Signed(const void* data)
+{
+	return (int32_t) Byteswap32(data);
+}
+
+static inline int32_t Byteswap32SignedRW(void* data)
+{
+	int32_t result = Byteswap32Signed(data);
+	*(int32_t*) data = result;
+	return result;
 }
 
 #ifdef __cplusplus

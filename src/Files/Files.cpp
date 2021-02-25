@@ -369,8 +369,30 @@ OSErr GetFPos(short refNum, long* filePos)
 
 OSErr SetFPos(short refNum, short posMode, long filePos)
 {
-	TODOFATAL();
-	return unimpErr;
+	if (!IsRefNumLegal(refNum)) return rfNumErr;
+	if (!IsStreamOpen(refNum)) return fnOpnErr;
+
+	auto& f = GetStream(refNum);
+
+	switch (posMode)
+	{
+		case fsFromStart:
+			f.seekg(filePos, std::ios::beg);
+			break;
+
+		case fsFromMark:
+			f.seekg(filePos, std::ios::cur);
+			break;
+
+		case fsFromLEOF:
+			f.seekg(filePos, std::ios::end);
+			break;
+
+		default:
+			throw std::invalid_argument("SetFPos: unsupported posMode");
+	}
+
+	return noErr;
 }
 
 FSSpec Pomme::Files::HostPathToFSSpec(const fs::path& fullPath)

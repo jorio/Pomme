@@ -234,9 +234,9 @@ typedef SndCallBackProcPtr          SndCallbackUPP;
 typedef struct SndChannel
 {
 	SndChannelPtr                   nextChan;
-	Ptr                             firstMod;                   // reserved for the Sound Manager (Pomme: used as internal ptr)
 	SndCallBackProcPtr              callBack;
 	long long                       userInfo;                   // free for application's use (Pomme: made it 64 bit so app can store ptrs)
+	Ptr                             channelImpl;                // Pomme: internal ptr to implementation
 #if 0
 	long                            wait;                       // The following is for internal Sound Manager use only.
 	SndCommand                      cmdInProgress;

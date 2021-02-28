@@ -79,6 +79,14 @@ enum SampledSoundEncoding
 //-----------------------------------------------------------------------------
 // Internal channel info
 
+enum ApplyParametersMask
+{
+	kApplyParameters_PanAndGain		= 1 << 0,
+	kApplyParameters_Pitch			= 1 << 1,
+	kApplyParameters_Loop			= 1 << 2,
+	kApplyParameters_All            = 0xFFFFFFFF
+};
+
 struct ChannelImpl
 {
 private:
@@ -86,27 +94,34 @@ private:
 	ChannelImpl* next;
 
 public:
+	// Pointer to application-facing interface
 	SndChannelPtr macChannel;
 
 	bool macChannelStructAllocatedByPomme;
 	cmixer::WavStream source;
-	FilePlayCompletionProcPtr onComplete;
 
-	Byte baseNote = kMiddleC;
-	Byte playbackNote = kMiddleC;
-	double pitchMult = 1;
+	// Parameters coming from Mac sound commands, passed back to cmixer source
+	double pan;
+	double gain;
+	Byte baseNote;
+	Byte playbackNote;
+	double pitchMult;
+	bool loop;
+
 	bool temporaryPause = false;
 
 	ChannelImpl(SndChannelPtr _macChannel, bool transferMacChannelOwnership)
 		: macChannel(_macChannel)
 		, macChannelStructAllocatedByPomme(transferMacChannelOwnership)
 		, source()
-		, onComplete(nullptr)
+		, pan(0.0)
+		, gain(1.0)
 		, baseNote(kMiddleC)
 		, playbackNote(kMiddleC)
 		, pitchMult(1.0)
+		, loop(false)
 	{
-		macChannel->firstMod = (Ptr) this;
+		macChannel->channelImpl = (Ptr) this;
 
 		Link();  // Link chan into our list of managed chans
 	}
@@ -115,7 +130,7 @@ public:
 	{
 		Unlink();
 
-		macChannel->firstMod = nullptr;
+		macChannel->channelImpl = nullptr;
 
 		if (macChannelStructAllocatedByPomme)
 		{
@@ -126,21 +141,35 @@ public:
 	void Recycle()
 	{
 		source.Clear();
-		baseNote = kMiddleC;
-		playbackNote = kMiddleC;
-		pitchMult = 1;
-		temporaryPause = false;
 	}
 
-	void ApplyPitch()
+	void ApplyParametersToSource(uint32_t mask, bool evenIfInactive = false)
 	{
-		if (!source.active)
+		if (!evenIfInactive && !source.active)
 		{
 			return;
 		}
-		double baseFreq = midiNoteFrequencies[baseNote];
-		double playbackFreq = midiNoteFrequencies[playbackNote];
-		source.SetPitch(pitchMult * playbackFreq / baseFreq);
+
+		// Pitch
+		if (mask & kApplyParameters_Pitch)
+		{
+			double baseFreq = midiNoteFrequencies[baseNote];
+			double playbackFreq = midiNoteFrequencies[playbackNote];
+			source.SetPitch(pitchMult * playbackFreq / baseFreq);
+		}
+
+		// Pan and gain
+		if (mask & kApplyParameters_PanAndGain)
+		{
+			source.SetPan(pan);
+			source.SetGain(gain);
+		}
+
+		// Interpolation
+		if (mask & kApplyParameters_Interpolation)
+		{
+			source.SetInterpolation(interpolate);
+		}
 	}
 
 	ChannelImpl* GetPrev() const
@@ -212,7 +241,7 @@ public:
 
 static inline ChannelImpl& GetImpl(SndChannelPtr chan)
 {
-	return *(ChannelImpl*) chan->firstMod;
+	return *(ChannelImpl*) chan->channelImpl;
 }
 
 //-----------------------------------------------------------------------------
@@ -464,8 +493,16 @@ static void ProcessSoundCmd(SndChannelPtr chan, const Ptr sndhdr)
 		impl.source.SetLoop(true);
 	}
 
-	impl.ApplyPitch();
+	// Pass Mac channel parameters to cmixer source.
+	// The loop param is a special case -- we're detecting it automatically according
+	// to the sound header. If your application needs to force set the loop, it must
+	// issue pommeSetLoopCmd *after* bufferCmd/soundCmd.
+	impl.ApplyParametersToSource(kApplyParameters_All & ~kApplyParameters_Loop, true);
+
+	// Override systemwide audio pause.
 	impl.temporaryPause = false;
+
+	// Get it going!
 	impl.source.Play();
 }
 
@@ -494,7 +531,8 @@ OSErr SndDoImmediate(SndChannelPtr chan, const SndCommand* cmd)
 		break;
 
 	case ampCmd:
-		impl.source.SetGain(cmd->param1 / 256.0);
+		impl.gain = cmd->param1 / 256.0;
+		impl.ApplyParametersToSource(kApplyParameters_PanAndGain);
 		break;
 
 	case volumeCmd:
@@ -505,31 +543,34 @@ OSErr SndDoImmediate(SndChannelPtr chan, const SndCommand* cmd)
 		double pan = (double)rvol / (rvol + lvol);
 		pan = (pan - 0.5) * 2.0;  // Transpose pan from [0...1] to [-1...+1]
 
-		impl.source.SetPan(pan);
-		impl.source.SetGain(std::max(lvol, rvol) / 256.0);
+		impl.pan = pan;
+		impl.gain = std::max(lvol, rvol) / 256.0;
+
+		impl.ApplyParametersToSource(kApplyParameters_PanAndGain);
 		break;
 	}
 
 	case freqCmd:
 		LOG << "freqCmd " << cmd->param2 << " " << GetMidiNoteName(cmd->param2) << " " << midiNoteFrequencies[cmd->param2] << "\n";
 		impl.playbackNote = Byte(cmd->param2);
-		impl.ApplyPitch();
+		impl.ApplyParametersToSource(kApplyParameters_Pitch);
 		break;
 
 	case rateCmd:
 		// IM:S says it's a fixed-point multiplier of 22KHz, but Nanosaur uses rate "1" everywhere,
 		// even for sounds sampled at 44Khz, so I'm treating it as just a pitch multiplier.
 		impl.pitchMult = cmd->param2 / 65536.0;
-		impl.ApplyPitch();
+		impl.ApplyParametersToSource(kApplyParameters_Pitch);
 		break;
 
 	case rateMultiplierCmd:
 		impl.pitchMult = cmd->param2 / 65536.0;
-		impl.ApplyPitch();
+		impl.ApplyParametersToSource(kApplyParameters_Pitch);
 		break;
 
 	case pommeSetLoopCmd:
-		impl.source.SetLoop(cmd->param1);
+		impl.loop = cmd->param1;
+		impl.ApplyParametersToSource(kApplyParameters_Loop);
 		break;
 
 	default:
@@ -541,7 +582,7 @@ OSErr SndDoImmediate(SndChannelPtr chan, const SndCommand* cmd)
 
 OSErr SndDoCommand(SndChannelPtr chan, const SndCommand* cmd, Boolean noWait)
 {
-	TODOMINOR();
+	TODOMINOR2("SndDoCommand isn't implemented yet, but you can probably use SndDoImmediate instead.");
 	return noErr;
 }
 

@@ -45,8 +45,6 @@ using namespace cmixer;
 
 #define BUFFER_MASK (BUFFER_SIZE - 1)
 
-static constexpr bool INTERPOLATED_RESAMPLING = false;
-
 //-----------------------------------------------------------------------------
 // Global mixer
 
@@ -229,6 +227,7 @@ void Source::ClearPrivate()
 	nextfill	= 0;
 	loop		= false;
 	rewind		= true;
+	interpolate = false;
 	// DON'T touch active. The source may still be in gMixer!
 	gain		= 0;
 	pan			= 0;
@@ -345,7 +344,7 @@ void Source::Process(int len)
 			}
 			this->position += count * FX_UNIT;
 		}
-		else if (INTERPOLATED_RESAMPLING)
+		else if (interpolate)
 		{
 			// Resample audio (with linear interpolation) and add to buffer
 			for (int i = 0; i < count; i++)
@@ -430,6 +429,11 @@ void Source::SetPitch(double newPitch)
 void Source::SetLoop(bool newLoop)
 {
 	loop = newLoop;
+}
+
+void Source::SetInterpolation(bool newInterpolation)
+{
+	interpolate = newInterpolation;
 }
 
 void Source::Play()

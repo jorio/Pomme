@@ -84,6 +84,7 @@ enum ApplyParametersMask
 	kApplyParameters_PanAndGain		= 1 << 0,
 	kApplyParameters_Pitch			= 1 << 1,
 	kApplyParameters_Loop			= 1 << 2,
+	kApplyParameters_Interpolation	= 1 << 3,
 	kApplyParameters_All            = 0xFFFFFFFF
 };
 
@@ -107,6 +108,7 @@ public:
 	Byte playbackNote;
 	double pitchMult;
 	bool loop;
+	bool interpolate;
 
 	bool temporaryPause = false;
 
@@ -120,6 +122,7 @@ public:
 		, playbackNote(kMiddleC)
 		, pitchMult(1.0)
 		, loop(false)
+		, interpolate(false)
 	{
 		macChannel->channelImpl = (Ptr) this;
 
@@ -169,6 +172,12 @@ public:
 		if (mask & kApplyParameters_Interpolation)
 		{
 			source.SetInterpolation(interpolate);
+		}
+
+		// Interpolation
+		if (mask & kApplyParameters_Loop)
+		{
+			source.SetLoop(loop);
 		}
 	}
 
@@ -332,7 +341,9 @@ OSErr SndNewChannel(SndChannelPtr* macChanPtr, short synth, long init, SndCallBa
 	// Set up
 
 	(**macChanPtr).callBack = userRoutine;
-	new ChannelImpl(*macChanPtr, transferMacChannelOwnership);
+	auto channelImpl = new ChannelImpl(*macChanPtr, transferMacChannelOwnership);
+
+	channelImpl->interpolate = !(init & initNoInterp);
 
 	//---------------------------
 	// Done

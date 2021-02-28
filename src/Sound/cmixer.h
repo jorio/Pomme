@@ -55,6 +55,7 @@ namespace cmixer
 		bool loop;                      // Whether the source will loop when `end` is reached
 		bool rewind;                    // Whether the source will rewind before playing
 		bool active;                    // Whether the source is part of `sources` list
+		bool interpolate;               // Interpolated resampling when played back at a non-native rate
 		double gain;                    // Gain set by `cm_set_gain()`
 		double pan;                     // Pan set by `cm_set_pan()`
 		std::function<void()> onComplete;        // Callback
@@ -98,6 +99,8 @@ namespace cmixer
 		void SetPitch(double pitch);
 
 		void SetLoop(bool loop);
+
+		void SetInterpolation(bool interpolation);
 
 		void Play();
 

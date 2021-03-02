@@ -610,15 +610,29 @@ OSErr GetSoundHeaderOffset(SndListHandle sndHandle, long* offset)
 	memstream sndStream((Ptr) *sndHandle, GetHandleSize((Handle) sndHandle));
 	Pomme::BigEndianIStream f(sndStream);
 
-	// Skip everything before sound commands
-	Expect<SInt16>(1, f.Read<SInt16>(), "'snd ' format");
-	Expect<SInt16>(1, f.Read<SInt16>(), "'snd ' modifier count");
-	Expect<SInt16>(5, f.Read<SInt16>(), "'snd ' sampledSynth");
-	UInt32 initBits = f.Read<UInt32>();
+	// Read header
+	SInt16 format = f.Read<SInt16>();
+	switch (format)
+	{
+		case 1:  // Standard 'snd ' resource
+		{
+			Expect<SInt16>(1, f.Read<SInt16>(), "'snd ' modifier count");
+			Expect<SInt16>(5, f.Read<SInt16>(), "'snd ' sampledSynth");
+			UInt32 initBits = f.Read<UInt32>();
+			if (initBits & initMACE6)
+				TODOFATAL2("MACE-6 not supported yet");
+			break;
+		}
 
-	if (initBits & initMACE6)
-		TODOFATAL2("MACE-6 not supported yet");
+		case 2:  // HyperCard sampled-sound format
+			f.Skip(2);  // Skip reference count (for application use)
+			break;
 
+		default:
+			return badFormat;
+	}
+
+	// Now read sound commands
 	SInt16 nCmds = f.Read<SInt16>();
 	//LOG << nCmds << " commands\n";
 	for (; nCmds >= 1; nCmds--)

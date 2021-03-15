@@ -66,7 +66,7 @@ Handle NewHandleSys(Size s)
 
 Handle NewHandleSysClear(Size s)
 {
-	return NewHandleSysClear(s);
+	return NewHandleClear(s);
 }
 
 Handle TempNewHandle(Size s, OSErr* err)

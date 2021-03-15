@@ -88,19 +88,26 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 )
 
 if(MSVC)
+	# By default, MSVC may add /EHsc to CMAKE_CXX_FLAGS, which we don't want (we use /EHs below)
+	string(REPLACE "/EHsc" "" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
+
+	# By default, MSVC may add /W3 to CMAKE_CXX_FLAGS, which we don't want (we use /W4 below)
+	# Note that this is not required with "cmake_minimum_required(VERSION 3.15)" or later
+	string(REPLACE "/W3" "" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
+
 	# On Win32, we need NOGDI and NOUSER to be able to define some Mac functions
 	# whose names are otherwise taken by Windows APIs.
 	target_compile_definitions(${PROJECT_NAME} PRIVATE WIN32_LEAN_AND_MEAN NOGDI NOUSER)
 
 	target_compile_options(${PROJECT_NAME} PRIVATE
-		/EHa
+		/EHs	# synchronous exceptions; also, extern "C" functions may throw exceptions
 		/W4
 		/wd4068 # ignore unrecognized pragmas
 		/wd4100	# unreferenced formal parameter
 		/wd4201 # nonstandard extension
 		/wd4244 # conversion from double to float
 		/wd4458 # declaration of variable hides class member
-		/MP
+		/MP		# multiprocessor compilation
 	)
 else()
 	target_compile_options(${PROJECT_NAME} PRIVATE

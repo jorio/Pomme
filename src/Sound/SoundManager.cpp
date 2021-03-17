@@ -146,6 +146,12 @@ public:
 		source.Clear();
 	}
 
+	void SetInitializationParameters(long initBits)
+	{
+		interpolate = !(initBits & initNoInterp);
+		source.SetInterpolation(interpolate);
+	}
+
 	void ApplyParametersToSource(uint32_t mask, bool evenIfInactive = false)
 	{
 		if (!evenIfInactive && !source.active)
@@ -343,7 +349,7 @@ OSErr SndNewChannel(SndChannelPtr* macChanPtr, short synth, long init, SndCallBa
 	(**macChanPtr).callBack = userRoutine;
 	auto channelImpl = new ChannelImpl(*macChanPtr, transferMacChannelOwnership);
 
-	channelImpl->interpolate = !(init & initNoInterp);
+	channelImpl->SetInitializationParameters(init);
 
 	//---------------------------
 	// Done
@@ -577,6 +583,10 @@ OSErr SndDoImmediate(SndChannelPtr chan, const SndCommand* cmd)
 	case rateMultiplierCmd:
 		impl.pitchMult = cmd->param2 / 65536.0;
 		impl.ApplyParametersToSource(kApplyParameters_Pitch);
+		break;
+
+	case reInitCmd:
+		impl.SetInitializationParameters(cmd->param2);
 		break;
 
 	case pommeSetLoopCmd:

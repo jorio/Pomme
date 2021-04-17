@@ -171,7 +171,8 @@ static bool CaseInsensitiveAppendToPath(
 		return true;
 	}
 
-	const auto ELEMENT = UppercaseCopy(element);
+	// Convert path element to uppercase for case-insensitive comparisons
+	const auto uppercaseElement = UppercaseCopy(element);
 
 	for (const auto& candidate : fs::directory_iterator(path))
 	{
@@ -180,21 +181,24 @@ static bool CaseInsensitiveAppendToPath(
 			continue;
 		}
 
-#if LEGACY_FILESYSTEM_IMPLEMENTATION  // ghc::path::u8string returns an std::string
-		std::string f = candidate.path().filename().u8string();
-#else
-		auto f = FromU8(candidate.path().filename().u8string());
-#endif
+		fs::path candidateFilename = candidate.path().filename();
 
 		// It might be an AppleDouble resource fork ("file.rsrc")
-		if (candidate.is_regular_file() && f.ends_with(".rsrc"))
+		if (candidate.is_regular_file() && candidateFilename.extension() == ".rsrc")
 		{
-			f = f.substr(0, f.length() - 5);
+			candidateFilename.replace_extension("");
 		}
 
-		if (ELEMENT == UppercaseCopy(f))
+		// Convert candidate filename to uppercase for case-insensitive comparison
+#if LEGACY_FILESYSTEM_IMPLEMENTATION  // ghc::path::u8string returns an std::string
+		const std::string uppercaseCandidateFilename = UppercaseCopy(candidateFilename.u8string());
+#else // C++20
+		const std::string uppercaseCandidateFilename = UppercaseCopy(FromU8(candidateFilename.u8string()));
+#endif
+
+		if (uppercaseElement == uppercaseCandidateFilename)
 		{
-			path /= AsU8(f);
+			path /= candidateFilename;
 			return true;
 		}
 	}

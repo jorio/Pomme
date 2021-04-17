@@ -39,20 +39,27 @@ void ImplementMe(const char* fn, std::string msg, int severity)
 	}
 }
 
-std::string Pomme::FourCCString(uint32_t t, char filler)
+std::string Pomme::FourCCString(uint32_t fourCC, char filler)
 {
-	char b[5];
-	*(uint32_t*) b = t;
-#if !(TARGET_RT_BIGENDIAN)
-	std::reverse(b, b + 4);
-#endif
-	// Replace any non-alphanumeric character with the filler character.
-	// This ensures that the resulting string is suitable for use as a filename.
+	char stringBuffer[5];
+
+	int shift = 24;
+
 	for (int i = 0; i < 4; i++)
 	{
-		if (!isalnum(b[i]))
-			b[i] = filler;
+		char c = (fourCC >> shift) & 0xFF;
+
+		// Replace any non-alphanumeric character with the filler character.
+		// This ensures that the resulting string is suitable for use as a filename.
+		if (!isalnum(c))
+			c = filler;
+
+		stringBuffer[i] = c;
+
+		shift -= 8;
 	}
-	b[4] = '\0';
-	return b;
+
+	stringBuffer[4] = '\0';
+
+	return stringBuffer;
 }

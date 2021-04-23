@@ -320,6 +320,9 @@ Boolean Button(void);
 //-----------------------------------------------------------------------------
 // Memory: No-op
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+
 // No-op in Pomme.
 static inline void MaxApplZone(void) {}
 
@@ -367,6 +370,8 @@ static inline Boolean LockPixels(PixMapHandle handle) { return true; }	// no-op;
 // If the Memory Manager started up in 24-bit mode, strips flag bits from 24-bit memory addresses;
 // otherwise (in 32-bit mode), returns the address unchanged.
 static inline Ptr StripAddress(Ptr ptr) { return ptr; }  // no-op
+
+#pragma GCC diagnostic pop
 
 //-----------------------------------------------------------------------------
 // Memory: Handle

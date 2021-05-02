@@ -378,7 +378,8 @@ void Q3MetaFileParser::Parse_atar(uint32_t chunkSize)
 
 	Assert(isTriangleAttribute || isVertexAttribute, "only face or vertex attributes are supported");
 
-	if (isVertexAttribute && attributeType == kQ3AttributeTypeShadingUV)
+	if (isVertexAttribute &&
+			(attributeType == kQ3AttributeTypeShadingUV || attributeType == kQ3AttributeTypeSurfaceUV))
 	{
 		printf("vertex UVs");
 		Assert(!currentMesh->vertexUVs, "current mesh already had a vertex UV array");

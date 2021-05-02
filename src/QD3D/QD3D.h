@@ -143,6 +143,14 @@ typedef enum
 	kQ3EndianSize32                             = 0xFFFFFFFF
 } TQ3Endian;
 
+typedef enum
+{
+	kQ3TriMeshDataFeatureNone					= 0,
+	kQ3TriMeshDataFeatureVertexUVs				= 1 << 0,
+	kQ3TriMeshDataFeatureVertexNormals			= 1 << 1,
+	kQ3TriMeshDataFeatureVertexColors			= 1 << 2,
+} TQ3TriMeshDataFeatureFlags;
+
 typedef struct TQ3Param2D
 {
 	float					u;
@@ -280,6 +288,7 @@ typedef struct TQ3TriMeshData
 	int											internalTextureID;
 	uint32_t									glTextureName;
 
+	bool										hasVertexNormals;
 	bool										hasVertexColors;
 
 	TQ3ColorRGBA								diffuseColor;
@@ -350,7 +359,7 @@ void Q3Pixmap_Dispose(TQ3Pixmap*);
 
 #pragma mark -
 
-TQ3TriMeshData* Q3TriMeshData_New(int numTriangles, int numPoints, bool perVertexColors);
+TQ3TriMeshData* Q3TriMeshData_New(int numTriangles, int numPoints, int featureFlags);
 
 TQ3TriMeshData* Q3TriMeshData_Duplicate(const TQ3TriMeshData* source);
 

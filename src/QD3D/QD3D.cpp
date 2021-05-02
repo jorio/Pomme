@@ -148,7 +148,7 @@ void Q3Pixmap_Dispose(TQ3Pixmap* pixmap)
 
 #pragma mark -
 
-TQ3TriMeshData* Q3TriMeshData_New(int numTriangles,	int numPoints, bool perVertexColors)
+TQ3TriMeshData* Q3TriMeshData_New(int numTriangles,	int numPoints, int featureFlags)
 {
 	TQ3TriMeshData* mesh	= __Q3Alloc<TQ3TriMeshData>(1, 'MESH');
 
@@ -156,28 +156,45 @@ TQ3TriMeshData* Q3TriMeshData_New(int numTriangles,	int numPoints, bool perVerte
 	mesh->numPoints			= numPoints;
 	mesh->points			= __Q3Alloc<TQ3Point3D>(numPoints, 'TMpt');
 	mesh->triangles			= __Q3Alloc<TQ3TriMeshTriangleData>(numTriangles, 'TMtr');
-	mesh->vertexNormals		= __Q3Alloc<TQ3Vector3D>(numPoints, 'TMvn');
-	mesh->vertexUVs			= __Q3Alloc<TQ3Param2D>(numPoints, 'TMuv');
-	mesh->vertexColors		= perVertexColors? __Q3Alloc<TQ3ColorRGBA>(numPoints, 'TMvc'): nullptr;
 	mesh->diffuseColor		= {1, 1, 1, 1};
 	mesh->texturingMode		= kQ3TexturingModeOff;
 	mesh->internalTextureID	= -1;
 	mesh->bBox				= {{0,0,0}, {0,0,0}, kQ3True};	// empty
 
-	for (int i = 0; i < numPoints; i++)
+	if (featureFlags & kQ3TriMeshDataFeatureVertexUVs)
 	{
-		mesh->vertexNormals[i] = {0, 1, 0};
-		mesh->vertexUVs[i] = {.5f, .5f};
-	}
-
-	if (perVertexColors)
-	{
+		mesh->vertexUVs = __Q3Alloc<TQ3Param2D>(numPoints, 'TMuv');
 		for (int i = 0; i < numPoints; i++)
-			mesh->vertexColors[i] = {1, 1, 1, 1};
-		mesh->hasVertexColors = true;
+			mesh->vertexUVs[i] = {.5f, .5f};
 	}
 	else
 	{
+		mesh->vertexUVs = nullptr;
+	}
+
+	if (featureFlags & kQ3TriMeshDataFeatureVertexNormals)
+	{
+		mesh->hasVertexNormals = true;
+		mesh->vertexNormals = __Q3Alloc<TQ3Vector3D>(numPoints, 'TMvn');
+		for (int i = 0; i < numPoints; i++)
+			mesh->vertexNormals[i] = {0, 1, 0};
+	}
+	else
+	{
+		mesh->vertexNormals = nullptr;
+		mesh->hasVertexNormals = false;
+	}
+
+	if (featureFlags & kQ3TriMeshDataFeatureVertexColors)
+	{
+		mesh->hasVertexColors = true;
+		mesh->vertexColors = __Q3Alloc<TQ3ColorRGBA>(numPoints, 'TMvc');
+		for (int i = 0; i < numPoints; i++)
+			mesh->vertexColors[i] = {1, 1, 1, 1};
+	}
+	else
+	{
+		mesh->vertexColors = nullptr;
 		mesh->hasVertexColors = false;
 	}
 

@@ -188,7 +188,7 @@ uint32_t Q3MetaFileParser::Parse1Chunk()
 		{
 			Assert(chunkSize == 4, "illegal rfrn size");
 			uint32_t target = f.Read<uint32_t>();
-			printf("TOC#%d -----> %08lx", target, referenceTOC.at(target));
+			printf("TOC#%d -----> %08lx", target, referenceTOC.at(target).offset);
 			auto jumpBackTo = f.Tell();
 			f.Goto(referenceTOC.at(target).offset);
 			Parse1Chunk();
@@ -293,11 +293,9 @@ void Q3MetaFileParser::Parse_tmsh(uint32_t chunkSize)
 	Assert(0 == numEdges, "edges are not supported");
 	Assert(0 == numEdgeAttributes, "edge attributes are not supported");
 
-	currentMesh = Q3TriMeshData_New(
-			numTriangles,
-			numVertices,
-			false			// Don't allocate per-vertex colors yet. We'll allocate them later if the mesh needs them.
-	);
+	// Allocate the mesh.
+	// Don't allocate vertex UVs, colors or normals yet. We'll allocate them later if the mesh needs them.
+	currentMesh = Q3TriMeshData_New(numTriangles, numVertices, 0);
 
 	__Q3EnlargeArray(metaFile.meshes, metaFile.numMeshes, 'MLST');
 	metaFile.meshes[metaFile.numMeshes-1] = currentMesh;
@@ -383,7 +381,10 @@ void Q3MetaFileParser::Parse_atar(uint32_t chunkSize)
 	if (isVertexAttribute && attributeType == kQ3AttributeTypeShadingUV)
 	{
 		printf("vertex UVs");
-		Assert(currentMesh->vertexUVs, "current mesh has no vertex UV array");
+		Assert(!currentMesh->vertexUVs, "current mesh already had a vertex UV array");
+
+		currentMesh->vertexUVs = __Q3Alloc<TQ3Param2D>(currentMesh->numPoints, 'TMuv');
+
 		for (int i = 0; i < currentMesh->numPoints; i++)
 		{
 			float u = f.Read<float>();
@@ -395,7 +396,11 @@ void Q3MetaFileParser::Parse_atar(uint32_t chunkSize)
 	{
 		printf("vertex normals");
 		Assert(positionInArray == 0, "PIA must be 0 for normals");
-		Assert(currentMesh->vertexNormals, "current mesh has no vertex normal array");
+		Assert(!currentMesh->vertexNormals, "current mesh already had a vertex normal array");
+
+		currentMesh->vertexNormals = __Q3Alloc<TQ3Vector3D>(currentMesh->numPoints, 'TMvn');
+		currentMesh->hasVertexNormals = true;
+
 		for (int i = 0; i < currentMesh->numPoints; i++)
 		{
 			currentMesh->vertexNormals[i].x = f.Read<float>();
@@ -409,6 +414,7 @@ void Q3MetaFileParser::Parse_atar(uint32_t chunkSize)
 //		Assert(positionInArray == 0, "PIA must be 0 for colors");
 		Assert(!currentMesh->vertexColors, "current mesh already had a vertex color array");
 		currentMesh->vertexColors = __Q3Alloc<TQ3ColorRGBA>(currentMesh->numPoints, 'TMvc');
+		currentMesh->hasVertexColors = true;
 		for (int i = 0; i < currentMesh->numPoints; i++)
 		{
 			currentMesh->vertexColors[i].r = f.Read<float>();
@@ -416,7 +422,6 @@ void Q3MetaFileParser::Parse_atar(uint32_t chunkSize)
 			currentMesh->vertexColors[i].b = f.Read<float>();
 			currentMesh->vertexColors[i].a = 1.0f;
 		}
-		currentMesh->hasVertexColors = true;
 	}
 	else if (isTriangleAttribute && attributeType == kQ3AttributeTypeNormal)		// face normals
 	{

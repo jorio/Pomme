@@ -416,6 +416,7 @@ void Q3MetaFileParser::Parse_atar(uint32_t chunkSize)
 			currentMesh->vertexColors[i].b = f.Read<float>();
 			currentMesh->vertexColors[i].a = 1.0f;
 		}
+		currentMesh->hasVertexColors = true;
 	}
 	else if (isTriangleAttribute && attributeType == kQ3AttributeTypeNormal)		// face normals
 	{

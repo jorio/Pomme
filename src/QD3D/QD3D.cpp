@@ -174,6 +174,11 @@ TQ3TriMeshData* Q3TriMeshData_New(int numTriangles,	int numPoints, bool perVerte
 	{
 		for (int i = 0; i < numPoints; i++)
 			mesh->vertexColors[i] = {1, 1, 1, 1};
+		mesh->hasVertexColors = true;
+	}
+	else
+	{
+		mesh->hasVertexColors = false;
 	}
 
 	return mesh;

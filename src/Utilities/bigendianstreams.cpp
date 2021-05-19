@@ -1,4 +1,4 @@
-#include "Utilities/BigEndianIStream.h"
+#include "Utilities/bigendianstreams.h"
 #include "Utilities/IEEEExtended.h"
 
 Pomme::StreamPosGuard::StreamPosGuard(std::istream& theStream) :
@@ -20,6 +20,8 @@ void Pomme::StreamPosGuard::Cancel()
 {
 	active = false;
 }
+
+// ----------------------------------------------------------------------------
 
 Pomme::BigEndianIStream::BigEndianIStream(std::istream& theStream) :
 	stream(theStream)
@@ -83,3 +85,46 @@ Pomme::StreamPosGuard Pomme::BigEndianIStream::GuardPos()
 {
 	return Pomme::StreamPosGuard(stream);
 }
+
+// ----------------------------------------------------------------------------
+
+Pomme::BigEndianOStream::BigEndianOStream(std::ostream& theStream) :
+	stream(theStream)
+{
+}
+
+void Pomme::BigEndianOStream::Write(const char* src, size_t n)
+{
+	stream.write(src, n);
+}
+
+void Pomme::BigEndianOStream::WritePascalString(const std::string& text, int padToAlignment)
+{
+	int length = text.length();
+	if (length > 255)
+	{
+		throw std::out_of_range("WritePascalString: must be <255 characters!");
+	}
+	Write<uint8_t>(length);
+	Write(text.data(), length);
+
+	int padding = (length + 1) % padToAlignment;
+	for (int i = 0; i < padding; i++)
+		Write<uint8_t>(0);
+}
+
+void Pomme::BigEndianOStream::WriteRawString(const std::string& text)
+{
+	Write(text.data(), text.length());
+}
+
+void Pomme::BigEndianOStream::Goto(std::streamoff absoluteOffset)
+{
+	stream.seekp(absoluteOffset, std::ios_base::beg);
+}
+
+std::streampos Pomme::BigEndianOStream::Tell() const
+{
+	return stream.tellp();
+}
+

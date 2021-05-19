@@ -4,7 +4,7 @@
 
 #include <cstring>
 #include <Utilities/memstream.h>
-#include <Utilities/BigEndianIStream.h>
+#include <Utilities/bigendianstreams.h>
 
 void NumToString(long theNum, Str255 theString)
 {

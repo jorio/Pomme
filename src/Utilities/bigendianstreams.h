@@ -22,8 +22,6 @@ namespace Pomme
 
 	class BigEndianIStream
 	{
-		std::istream& stream;
-
 	public:
 		BigEndianIStream(std::istream& theStream);
 
@@ -58,5 +56,40 @@ namespace Pomme
 #endif
 			return *(T*) b;
 		}
+	
+	private:
+		std::istream& stream;
+	};
+
+	class BigEndianOStream
+	{
+	public:
+		BigEndianOStream(std::ostream& theStream);
+
+		void Write(const char* src, size_t n);
+
+		void Goto(std::streamoff absoluteOffset);
+
+		std::streampos Tell() const;
+
+		void WritePascalString(const std::string& text, int padToAlignment = 1);
+
+		void WriteRawString(const std::string& text);
+
+		template<typename T>
+		void Write(T value)
+		{
+			char* b = (char*) &value;
+#if !(TARGET_RT_BIGENDIAN)
+			if constexpr (sizeof(T) > 1)
+			{
+				std::reverse(b, b + sizeof(T));
+			}
+#endif
+			Write(b, sizeof(T));
+		}
+
+	private:
+		std::ostream& stream;
 	};
 }

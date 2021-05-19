@@ -7,7 +7,7 @@
 #include <map>
 #include <cstring>
 #include <QD3D/QD3D.h>
-#include "Utilities/BigEndianIStream.h"
+#include "Utilities/bigendianstreams.h"
 
 struct Q3MetaFileTOCEntry
 {

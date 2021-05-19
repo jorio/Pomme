@@ -1,5 +1,5 @@
 #include "Pomme.h"
-#include "Utilities/BigEndianIStream.h"
+#include "Utilities/bigendianstreams.h"
 #include "Utilities/GrowablePool.h"
 #include "Utilities/memstream.h"
 #include "PommeFiles.h"

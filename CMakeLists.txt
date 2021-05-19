@@ -40,7 +40,8 @@ set(POMME_SOURCES
 	${POMME_SRCDIR}/Sound/xlaw.cpp
 	${POMME_SRCDIR}/Text/TextUtilities.cpp
 	${POMME_SRCDIR}/Time/TimeManager.cpp
-	${POMME_SRCDIR}/Utilities/BigEndianIStream.cpp
+	${POMME_SRCDIR}/Utilities/bigendianstreams.cpp
+	${POMME_SRCDIR}/Utilities/bigendianstreams.h
 	${POMME_SRCDIR}/Utilities/FixedPool.h
 	${POMME_SRCDIR}/Utilities/GrowablePool.h
 	${POMME_SRCDIR}/Utilities/IEEEExtended.cpp

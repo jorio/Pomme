@@ -1,6 +1,6 @@
 #include "Pomme.h"
 #include "PommeGraphics.h"
-#include "Utilities/BigEndianIStream.h"
+#include "Utilities/bigendianstreams.h"
 
 #include <list>
 #include <fstream>

@@ -2,7 +2,7 @@
 #include "PommeFiles.h"
 #include "Sound/cmixer.h"
 #include "PommeSound.h"
-#include "Utilities/BigEndianIStream.h"
+#include "Utilities/bigendianstreams.h"
 #include "Utilities/memstream.h"
 
 #include <thread>

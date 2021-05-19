@@ -2,7 +2,7 @@
 #include "PommeDebug.h"
 #include "PommeFiles.h"
 #include "Files/HostVolume.h"
-#include "Utilities/BigEndianIStream.h"
+#include "Utilities/bigendianstreams.h"
 #include "Utilities/StringUtils.h"
 
 #include <fstream>

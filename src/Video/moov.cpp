@@ -1,7 +1,7 @@
 #include "Video/Cinepak.h"
 #include "PommeVideo.h"
 #include "PommeSound.h"
-#include "Utilities/BigEndianIStream.h"
+#include "Utilities/bigendianstreams.h"
 #include "PommeDebug.h"
 
 #include <iostream>

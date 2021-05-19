@@ -1,5 +1,5 @@
 #include "PommeSound.h"
-#include "Utilities/BigEndianIStream.h"
+#include "Utilities/bigendianstreams.h"
 #include <cstdint>
 
 static void AIFFAssert(bool condition, const char* message)

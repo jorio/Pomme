@@ -7,6 +7,10 @@
 #include <iostream>
 #include "CompilerSupport/filesystem.h"
 
+#if _DEBUG
+#include "PommeSound.h"
+#endif
+
 #define LOG POMME_GENLOG(POMME_DEBUG_RESOURCES, "RSRC")
 
 using namespace Pomme;
@@ -79,7 +83,7 @@ static void DumpResource(const ResourceMetadata& meta)
 	outPath /= ss.str();
 	outPath += "." + Pomme::FourCCString(meta.type, '_');
 
-	std::ofstream dump(outPath, std::ofstream::binary);
+	std::ofstream dump(outPath, std::ios::binary);
 
 	// Add a 512-byte blank header to PICTs so tools such as ImageMagick or Preview.app will display them
 	if (meta.type == 'PICT')
@@ -88,10 +92,23 @@ static void DumpResource(const ResourceMetadata& meta)
 			dump.put(0);
 	}
 
+
 	dump.write(*handle, meta.size);
 	dump.close();
-
 	std::cout << "wrote " << outPath << "\n";
+
+#if _DEBUG
+	// Dump sounds as AIFF as well
+	if (meta.type == 'snd ')
+	{
+		outPath.replace_extension(".aiff");
+		std::ofstream aiff(outPath, std::ios::binary);
+		Pomme::Sound::DumpSoundResourceToAIFF(handle, aiff, meta.name);
+		aiff.close();
+
+		std::cout << "wrote " << outPath << "\n";
+	}
+#endif
 
 	DisposeHandle(handle);
 }

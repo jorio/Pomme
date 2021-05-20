@@ -61,7 +61,7 @@ std::ostream& operator<<(std::ostream& s, const Rect& r)
 
 void Pomme::Graphics::DumpTGA(const char* path, short width, short height, const char* argbData)
 {
-	std::ofstream tga(path);
+	std::ofstream tga(path, std::ios::binary);
 	uint16_t tgaHdr[] = {0, 2, 0, 0, 0, 0, (uint16_t) width, (uint16_t) height, 0x2820};
 	tga.write((const char*) tgaHdr, sizeof(tgaHdr));
 	for (int i = 0; i < 4 * width * height; i += 4)

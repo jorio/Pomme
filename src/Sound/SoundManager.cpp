@@ -3,6 +3,7 @@
 #include "Sound/cmixer.h"
 #include "PommeSound.h"
 #include "Utilities/bigendianstreams.h"
+#include "Utilities/IEEEExtended.h"
 #include "Utilities/memstream.h"
 
 #include <thread>
@@ -49,16 +50,11 @@ struct SampledSoundHeader
 		SInt32	extSH_nChannels;
 		SInt32	nativeSH_nBytes;
 	};
-	Fixed	fixedSampleRate;
+	UnsignedFixed	fixedSampleRate;
 	UInt32	loopStart;
 	UInt32	loopEnd;
 	Byte	encoding;
 	Byte	baseFrequency;		 // 0-127, see Table 2-2, IM:S:2-43
-
-	unsigned int sampleRate() const
-	{
-		return (static_cast<unsigned int>(fixedSampleRate) >> 16) & 0xFFFF;
-	}
 };
 
 static_assert(sizeof(SampledSoundHeader) >= 22 && sizeof(SampledSoundHeader) <= 24,
@@ -74,6 +70,23 @@ enum SampledSoundEncoding
 	nativeSH_stereo16	= 0x11,		// pomme extension
 	cmpSH				= 0xFE,
 	extSH				= 0xFF,
+};
+
+struct SampledSoundInfo
+{
+	int16_t nChannels;
+	uint32_t nPackets;
+	int16_t codecBitDepth;
+	bool bigEndian;
+	double sampleRate;
+	bool isCompressed;
+	uint32_t compressionType;
+	char* dataStart;
+	int compressedLength;
+	int decompressedLength;
+	int8_t baseNote;
+	uint32_t loopStart;
+	uint32_t loopEnd;
 };
 
 //-----------------------------------------------------------------------------
@@ -259,6 +272,123 @@ static inline ChannelImpl& GetImpl(SndChannelPtr chan)
 	return *(ChannelImpl*) chan->channelImpl;
 }
 
+static void GetSoundInfo(const Ptr sndhdr, SampledSoundInfo& info)
+{
+	// Prep the BE reader on the header.
+	memstream headerInput(sndhdr, kSampledSoundHeaderLength + 42);
+	Pomme::BigEndianIStream f(headerInput);
+
+	// Read in SampledSoundHeader and unpack it.
+	SampledSoundHeader header;
+	f.Read(reinterpret_cast<char*>(&header), kSampledSoundHeaderLength);
+	ByteswapStructs(kSampledSoundHeaderPackFormat, kSampledSoundHeaderLength, 1, reinterpret_cast<char*>(&header));
+
+	if (header.zero != 0)
+	{
+		// The first field can be a pointer to the sampled-sound data.
+		// In practice it's always gonna be 0.
+		TODOFATAL2("expected 0 at the beginning of an snd");
+	}
+
+
+	memset(&info, 0, sizeof(info));
+
+	info.sampleRate = static_cast<uint32_t>(header.fixedSampleRate) / 65536.0;
+	info.baseNote = header.baseFrequency;
+	info.loopStart = header.loopStart;
+	info.loopEnd = header.loopEnd;
+
+	switch (header.encoding)
+	{
+	case 0x00: // stdSH - standard sound header (noncompressed 8-bit mono sample data)
+		info.compressionType = 'raw ';  // unsigned (in AIFF-C files, 'NONE' means signed!)
+		info.isCompressed = false;
+		info.bigEndian = false;
+		info.codecBitDepth = 8;
+		info.nChannels = 1;
+		info.nPackets = header.stdSH_nBytes;
+		info.dataStart = sndhdr + f.Tell();
+		info.compressedLength = header.stdSH_nBytes;
+		info.decompressedLength = info.compressedLength;
+		break;
+
+	case nativeSH_mono16: // pomme extension for little-endian PCM data
+	case nativeSH_stereo16:
+		info.compressionType = 'sowt';
+		info.isCompressed = false;
+		info.bigEndian = false;
+		info.codecBitDepth = 16;
+		info.nChannels = header.encoding == nativeSH_mono16 ? 1 : 2;
+		info.nPackets = header.nativeSH_nBytes / (2 * info.nChannels);
+		info.dataStart = sndhdr + f.Tell();
+		info.compressedLength = header.nativeSH_nBytes;
+		info.decompressedLength = info.compressedLength;
+		break;
+
+	case 0xFE: // cmpSH - compressed sound header
+	{
+		info.nPackets = f.Read<int32_t>();
+		f.Skip(14);
+		info.compressionType = f.Read<uint32_t>();
+		f.Skip(20);
+
+		if (info.compressionType == 0)  // Assume MACE-3
+		{
+			// Assume MACE-3. It should've been set in the init options in the snd pre-header,
+			// but Nanosaur doesn't actually init the sound channels for MACE-3. So I guess the Mac
+			// assumes by default that any unspecified compression is MACE-3.
+			// If it wasn't MACE-3, it would've been caught by GetSoundHeaderOffset.
+			info.compressionType = 'MAC3';
+		}
+
+		std::unique_ptr<Pomme::Sound::Codec> codec = Pomme::Sound::GetCodec(info.compressionType);
+
+		info.isCompressed = true;
+		info.bigEndian = false;
+		info.nChannels = header.cmpSH_nChannels;
+		info.dataStart = sndhdr + f.Tell();
+		info.codecBitDepth = codec->AIFFBitDepth();
+		info.compressedLength   = info.nChannels * info.nPackets * codec->BytesPerPacket();
+		info.decompressedLength = info.nChannels * info.nPackets * codec->SamplesPerPacket() * 2;
+		break;
+	}
+
+	case 0xFF: // extSH - extended sound header (noncompressed 8/16-bit mono or stereo)
+	{
+		info.nPackets = f.Read<int32_t>();
+		f.Skip(22);
+		info.codecBitDepth = f.Read<int16_t>();
+		f.Skip(14);
+
+		info.isCompressed = false;
+		info.bigEndian = true;
+		info.compressionType = 'twos';  // TODO: if 16-bit, should we use 'raw ' or 'NONE'/'twos'?
+		info.nChannels = header.extSH_nChannels;
+		info.dataStart = sndhdr + f.Tell();
+		info.compressedLength = header.extSH_nChannels * info.nPackets * info.codecBitDepth / 8;
+		info.decompressedLength = info.compressedLength;
+
+		if (info.codecBitDepth == 8)
+			TODO2("should an 8-bit extSH be 'twos' or 'raw '?");
+		break;
+	}
+
+	default:
+		TODOFATAL2("unsupported snd header encoding " << (int)header.encoding);
+	}
+}
+
+static void GetSoundInfoFromSndResource(Handle sndHandle, SampledSoundInfo& info)
+{
+	long offsetToHeader;
+
+	GetSoundHeaderOffset((SndListHandle) sndHandle, &offsetToHeader);
+
+	Ptr sndhdr = (Ptr) (*sndHandle) + offsetToHeader;
+
+	GetSoundInfo(sndhdr, info);
+}
+
 //-----------------------------------------------------------------------------
 // MIDI note utilities
 
@@ -382,135 +512,58 @@ OSErr SndChannelStatus(SndChannelPtr chan, short theLength, SCStatusPtr theStatu
 	return noErr;
 }
 
-static void ProcessSoundCmd(SndChannelPtr chan, const Ptr sndhdr)
+// Install a sampled sound as a voice in a channel.
+static void InstallSoundInChannel(SndChannelPtr chan, const Ptr sampledSoundHeader)
 {
-	// Install a sampled sound as a voice in a channel. If the high bit of the
-	// command is set, param2 is interpreted as an offset from the beginning of
-	// the 'snd ' resource containing the command to the sound header. If the
-	// high bit is not set, param2 is interpreted as a pointer to the sound
-	// header.
+	//---------------------------------
+	// Get internal channel
 
 	auto& impl = GetImpl(chan);
-
 	impl.Recycle();
 
-	// PACKED RECORD
-	memstream headerInput(sndhdr, kSampledSoundHeaderLength + 42);
-	Pomme::BigEndianIStream f(headerInput);
+	//---------------------------------
+	// Distill sound info
 
-	SampledSoundHeader sh;
-	f.Read(reinterpret_cast<char*>(&sh), kSampledSoundHeaderLength);
-	ByteswapStructs(kSampledSoundHeaderPackFormat, kSampledSoundHeaderLength, 1, reinterpret_cast<char*>(&sh));
+	SampledSoundInfo info;
+	GetSoundInfo(sampledSoundHeader, info);
 
-	if (sh.zero != 0)
+	//---------------------------------
+	// Set cmixer source data
+
+	auto spanIn = std::span(info.dataStart, info.compressedLength);
+
+	if (info.isCompressed)
 	{
-		// The first field can be a pointer to the sampled-sound data.
-		// In practice it's always gonna be 0.
-		TODOFATAL2("expected 0 at the beginning of an snd");
-	}
+		auto spanOut = impl.source.GetBuffer(info.decompressedLength);
 
-	int sampleRate = sh.sampleRate();
-	impl.baseNote = sh.baseFrequency;
-
-	LOG << sampleRate << "Hz, " << GetMidiNoteName(sh.baseFrequency) << ", loop " << sh.loopStart << "->" << sh.loopEnd << ", ";
-
-	switch (sh.encoding)
-	{
-	case 0x00: // stdSH - standard sound header - IM:S:2-104
-	{
-		// noncompressed sample data (8-bit mono) from this point on
-		char* here = sndhdr + f.Tell();
-		impl.source.Init(sampleRate, 8, 1, false, std::span<char>(here, sh.stdSH_nBytes));
-		LOG_NOPREFIX << "stdSH: 8-bit mono, " << sh.stdSH_nBytes << " frames\n";
-		break;
-	}
-
-	case nativeSH_mono16:
-	case nativeSH_stereo16:
-	{
-		int nChannels = sh.encoding == nativeSH_mono16 ? 1 : 2;
-		char* here = sndhdr + f.Tell();
-		auto span = std::span(here, sh.nativeSH_nBytes);
-		impl.source.Init(sampleRate, 16, nChannels, false, span);
-		LOG_NOPREFIX << "nativeSH\n";
-		break;
-	}
-
-	case 0xFF: // extSH - extended sound header - IM:S:2-106
-	{
-		// fields that follow baseFrequency
-		SInt32 nFrames = f.Read<SInt32>();
-		f.Skip(22);
-		SInt16 bitDepth = f.Read<SInt16>();
-		f.Skip(14);
-
-		int nBytes = sh.extSH_nChannels * nFrames * bitDepth / 8;
-
-		// noncompressed sample data (big endian) from this point on
-		char* here = sndhdr + f.Tell();
-
-		LOG_NOPREFIX << "extSH: " << bitDepth << "-bit " << (sh.extSH_nChannels == 1? "mono": "stereo") << ", " << nFrames << " frames\n";
-
-		impl.source.Init(sampleRate, bitDepth, sh.extSH_nChannels, true, std::span<char>(here, nBytes));
-		break;
-	}
-
-	case 0xFE: // cmpSH - compressed sound header - IM:S:2-108
-	{
-		// fields that follow baseFrequency
-		SInt32 nCompressedChunks = f.Read<SInt32>();
-		f.Skip(14);
-		OSType format = f.Read<OSType>();
-		f.Skip(20);
-
-		if (format == 0)
-		{
-			// Assume MACE-3. It should've been set in the init options in the snd pre-header,
-			// but Nanosaur doesn't actually init the sound channels for MACE-3. So I guess the Mac
-			// assumes by default that any unspecified compression is MACE-3.
-			// If it wasn't MACE-3, it would've been caught by GetSoundHeaderOffset.
-			format = 'MAC3';
-		}
-
-		// compressed sample data from this point on
-		char* here = sndhdr + f.Tell();
-
-		std::cout << "cmpSH: " << Pomme::FourCCString(format) << " " << (sh.cmpSH_nChannels == 1 ? "mono" : "stereo") << ", " << nCompressedChunks << " ck\n";
-
-		std::unique_ptr<Pomme::Sound::Codec> codec = Pomme::Sound::GetCodec(format);
-
-		// Decompress
-		int nBytesIn  = sh.cmpSH_nChannels * nCompressedChunks * codec->BytesPerPacket();
-		int nBytesOut = sh.cmpSH_nChannels * nCompressedChunks * codec->SamplesPerPacket() * 2;
-
-		auto spanIn = std::span(here, nBytesIn);
-		auto spanOut = impl.source.GetBuffer(nBytesOut);
-
-		codec->Decode(sh.cmpSH_nChannels, spanIn, spanOut);
-		impl.source.Init(sampleRate, 16, sh.cmpSH_nChannels, false, spanOut);
-
-		break;
-	}
-
-	default:
-		TODOFATAL2("unsupported snd header encoding " << (int)sh.encoding);
-	}
-
-	if (sh.loopEnd - sh.loopStart <= 1)
-	{
-		// don't loop
-	}
-	else if (sh.loopStart == 0)
-	{
-		impl.source.SetLoop(true);
+		std::unique_ptr<Pomme::Sound::Codec> codec = Pomme::Sound::GetCodec(info.compressionType);
+		codec->Decode(info.nChannels, spanIn, spanOut);
+		impl.source.Init(info.sampleRate, 16, info.nChannels, false, spanOut);
 	}
 	else
 	{
-		TODO2("looping on a portion of the snd isn't supported yet");
-		impl.source.SetLoop(true);
+		impl.source.Init(info.sampleRate, info.codecBitDepth, info.nChannels, info.bigEndian, spanIn);
 	}
 
+	//---------------------------------
+	// Base note
+
+	impl.baseNote = info.baseNote;
+
+	//---------------------------------
+	// Loop
+
+	if (info.loopEnd - info.loopStart >= 2)
+	{
+		impl.source.SetLoop(true);
+
+		if (info.loopStart != 0)
+			TODO2("Warning: looping on a portion of the snd isn't supported yet");
+	}
+
+	//---------------------------------
 	// Pass Mac channel parameters to cmixer source.
+
 	// The loop param is a special case -- we're detecting it automatically according
 	// to the sound header. If your application needs to force set the loop, it must
 	// issue pommeSetLoopCmd *after* bufferCmd/soundCmd.
@@ -544,7 +597,7 @@ OSErr SndDoImmediate(SndChannelPtr chan, const SndCommand* cmd)
 
 	case bufferCmd:
 	case soundCmd:
-		ProcessSoundCmd(chan, cmd->ptr);
+		InstallSoundInChannel(chan, cmd->ptr);
 		break;
 
 	case ampCmd:
@@ -601,6 +654,7 @@ OSErr SndDoImmediate(SndChannelPtr chan, const SndCommand* cmd)
 	return noErr;
 }
 
+// Not implemented yet, but you can probably use SndDoImmediateInstead.
 OSErr SndDoCommand(SndChannelPtr chan, const SndCommand* cmd, Boolean noWait)
 {
 	TODOMINOR2("SndDoCommand isn't implemented yet, but you can probably use SndDoImmediate instead.");
@@ -757,52 +811,38 @@ NumVersion SndSoundManagerVersion()
 
 Boolean Pomme_DecompressSoundResource(SndListHandle* sndHandlePtr, long* offsetToHeader)
 {
-	// Prep the BE reader on the header.
-	Ptr sndhdr = (Ptr) (**sndHandlePtr) + *offsetToHeader;
-	memstream headerInput(sndhdr, kSampledSoundHeaderLength + 42);
-	Pomme::BigEndianIStream f(headerInput);
-
-	// Read in SampledSoundHeader and unpack it.
-	SampledSoundHeader sh;
-	f.Read(reinterpret_cast<char*>(&sh), kSampledSoundHeaderLength);
-	ByteswapStructs(kSampledSoundHeaderPackFormat, kSampledSoundHeaderLength, 1, reinterpret_cast<char*>(&sh));
+	SampledSoundInfo info;
+	GetSoundInfoFromSndResource((Handle) *sndHandlePtr, info);
 
 	// We only handle cmpSH (compressed) 'snd ' resources.
-	if (sh.encoding != cmpSH)
+	if (!info.isCompressed)
 	{
 		return false;
 	}
 
-	// Fields that follow SampledSoundHeader when the encoding is cmpSH.
-	const auto nCompressedChunks = f.Read<SInt32>();
-	f.Skip(14);
-	const auto format = f.Read<OSType>();
-	f.Skip(20);
-
-	// Compressed sample data in the input stream from this point on.
-
-	const char* here = sndhdr + f.Tell();
-
 	int outInitialSize = kSampledSoundCommandListLength + kSampledSoundHeaderLength;
 
-	std::unique_ptr<Pomme::Sound::Codec> codec = Pomme::Sound::GetCodec(format);
+	std::unique_ptr<Pomme::Sound::Codec> codec = Pomme::Sound::GetCodec(info.compressionType);
 
 	// Decompress
-	const int nBytesIn  = sh.cmpSH_nChannels * nCompressedChunks * codec->BytesPerPacket();
-	const int nBytesOut = sh.cmpSH_nChannels * nCompressedChunks * codec->SamplesPerPacket() * 2;
-	SndListHandle outHandle = (SndListHandle) NewHandle(outInitialSize + nBytesOut);
-	auto spanIn = std::span(here, nBytesIn);
-	auto spanOut = std::span((char*) *outHandle + outInitialSize, nBytesOut);
-	codec->Decode(sh.cmpSH_nChannels, spanIn, spanOut);
+	SndListHandle outHandle = (SndListHandle) NewHandle(outInitialSize + info.decompressedLength);
+	auto spanIn = std::span(info.dataStart, info.compressedLength);
+	auto spanOut = std::span((char*) *outHandle + outInitialSize, info.decompressedLength);
+	codec->Decode(info.nChannels, spanIn, spanOut);
 
 	// ------------------------------------------------------
 	// Now we have the PCM data.
 	// Put the output 'snd ' resource together.
 
-	SampledSoundHeader shOut = sh;
+	SampledSoundHeader shOut = {};
 	shOut.zero = 0;
-	shOut.encoding = sh.cmpSH_nChannels == 2 ? nativeSH_stereo16 : nativeSH_mono16;
-	shOut.nativeSH_nBytes = nBytesOut;
+	shOut.nativeSH_nBytes = info.decompressedLength;
+	shOut.fixedSampleRate = static_cast<UnsignedFixed>(info.sampleRate * 65536.0);
+	shOut.loopStart = info.loopStart;
+	shOut.loopEnd = info.loopEnd;
+	shOut.encoding = info.nChannels == 2 ? nativeSH_stereo16 : nativeSH_mono16;
+	shOut.baseFrequency = info.baseNote;
+
 	ByteswapStructs(kSampledSoundHeaderPackFormat, kSampledSoundHeaderLength, 1, reinterpret_cast<char*>(&shOut));
 
 	memcpy(*outHandle, kSampledSoundCommandList, kSampledSoundCommandListLength);
@@ -877,5 +917,141 @@ std::unique_ptr<Pomme::Sound::Codec> Pomme::Sound::GetCodec(uint32_t fourCC)
 		return std::make_unique<Pomme::Sound::xlaw>(fourCC);
 	default:
 		throw std::runtime_error("Unknown audio codec: " + Pomme::FourCCString(fourCC));
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Dump 'snd ' resource to AIFF
+
+void Pomme::Sound::DumpSoundResourceToAIFF(Handle sndHandle, std::ostream& output, const std::string& resourceName)
+{
+	class AIFFChunkGuard
+	{
+	public:
+		AIFFChunkGuard(Pomme::BigEndianOStream& theOutput, uint32_t chunkID)
+				: output(theOutput)
+		{
+			output.Write<uint32_t>(chunkID);
+			lengthFieldPosition = output.Tell();
+			output.Write<uint32_t>('#LEN');  // placeholder
+		}
+
+		~AIFFChunkGuard()
+		{
+			std::streampos endOfChunk = output.Tell();
+			std::streamoff chunkLength = endOfChunk - lengthFieldPosition - static_cast<std::streamoff>(4);
+
+			// Add zero pad byte if chunk length is odd
+			if (0 != (chunkLength & 1))
+			{
+				output.Write<uint8_t>(0);
+				endOfChunk += 1;
+			}
+
+			output.Goto(lengthFieldPosition);
+			output.Write<int32_t>(chunkLength);
+			output.Goto(endOfChunk);
+		}
+
+	private:
+		Pomme::BigEndianOStream& output;
+		std::streampos lengthFieldPosition;
+	};
+
+
+	SampledSoundInfo info;
+	GetSoundInfoFromSndResource(sndHandle, info);
+
+	char sampleRate80bit[10];
+	ConvertToIeeeExtended(info.sampleRate, sampleRate80bit);
+
+	Pomme::BigEndianOStream of(output);
+
+	bool hasLoop = info.loopEnd - info.loopStart > 1;
+
+	{
+		AIFFChunkGuard form(of, 'FORM');
+		of.Write<uint32_t>('AIFC');
+
+		{
+			AIFFChunkGuard chunk(of, 'FVER');
+			of.Write<uint32_t>(0xA2805140u);
+		}
+
+		{
+			AIFFChunkGuard chunk(of, 'COMM');
+			of.Write<int16_t>(info.nChannels);
+			of.Write<uint32_t>(info.nPackets);
+			of.Write<int16_t>(info.codecBitDepth);
+			of.Write(sampleRate80bit, sizeof(sampleRate80bit));
+			of.Write<uint32_t>(info.compressionType);
+
+			std::string compressionName;
+			switch (info.compressionType)
+			{
+				case 'MAC3': compressionName = "MACE 3-to-1"; break;
+				case 'ima4': compressionName = "IMA 16 bit 4-to-1"; break;
+				case 'NONE': compressionName = "Signed PCM"; break;
+				case 'twos': compressionName = "Signed big-endian PCM"; break;
+				case 'sowt': compressionName = "Signed little-endian PCM"; break;
+				case 'raw ': compressionName = "Unsigned PCM"; break;
+				case 'ulaw': compressionName = "mu-law"; break;
+				case 'alaw': compressionName = "A-law"; break;
+				default: compressionName = "";
+			}
+			of.WritePascalString(compressionName, 2); // human-readable compression type pascal string
+		}
+
+		if (hasLoop)
+		{
+			AIFFChunkGuard chunk(of, 'MARK');
+			of.Write<int16_t>(2);  // 2 markers
+			of.Write<int16_t>(101);  // marker ID
+			of.Write<uint32_t>(info.loopStart);
+			of.WritePascalString("beg loop", 2);
+			of.Write<int16_t>(102);  // marker ID
+			of.Write<uint32_t>(info.loopEnd);
+			of.WritePascalString("end loop", 2);
+		}
+
+		if (info.baseNote != kMiddleC || hasLoop)
+		{
+			AIFFChunkGuard chunk(of, 'INST');
+			of.Write<int8_t>(info.baseNote);
+			of.Write<int8_t>(0); // detune
+			of.Write<int8_t>(0x00); // lowNote
+			of.Write<int8_t>(0x7F); // highNote
+			of.Write<int8_t>(0x00); // lowVelocity
+			of.Write<int8_t>(0x7F); // highVelocity
+			of.Write<int16_t>(0); // gain
+			of.Write<int16_t>(hasLoop? 1: 0);  // sustainLoop.playMode
+			of.Write<int16_t>(hasLoop? 101: 0);  // sustainLoop.beginLoop
+			of.Write<int16_t>(hasLoop? 102: 0);  // sustainLoop.endLoop
+			of.Write<int16_t>(0);
+			of.Write<int16_t>(0);
+			of.Write<int16_t>(0);
+		}
+
+		if (!resourceName.empty())
+		{
+			AIFFChunkGuard chunk(of, 'NAME');
+			of.WriteRawString(resourceName);
+		}
+
+		{
+			AIFFChunkGuard chunk(of, 'ANNO');
+			std::stringstream ss;
+			ss << "Verbatim copy of data stream from 'snd ' resource.\n"
+			   << "MIDI base note: " << int(info.baseNote)
+			   << ", sustain loop: " << info.loopStart << "-" << info.loopEnd;
+			of.WriteRawString(ss.str());
+		}
+
+		{
+			AIFFChunkGuard chunk(of, 'SSND');
+			of.Write<int32_t>(0); // offset; don't care
+			of.Write<int32_t>(0); // blockSize; don't care
+			of.Write(info.dataStart, info.compressedLength);
+		}
 	}
 }

@@ -1,8 +1,10 @@
 #pragma once
 
 #include "CompilerSupport/span.h"
+#include "PommeTypes.h"
 #include <vector>
 #include <istream>
+#include <ostream>
 #include <memory>
 #include "Sound/cmixer.h"
 
@@ -14,6 +16,8 @@ namespace Pomme::Sound
 
 	void ReadAIFF(std::istream& input, cmixer::WavStream& output);
 
+	void DumpSoundResourceToAIFF(Handle input, std::ostream& output, const std::string& resourceName);
+
 	class Codec
 	{
 	public:
@@ -23,6 +27,8 @@ namespace Pomme::Sound
 		virtual int SamplesPerPacket() = 0;
 
 		virtual int BytesPerPacket() = 0;
+
+		virtual int AIFFBitDepth() = 0;
 
 		virtual void Decode(const int nChannels, const std::span<const char> input, const std::span<char> output) = 0;
 	};
@@ -36,6 +42,9 @@ namespace Pomme::Sound
 		int BytesPerPacket() override
 		{ return 2; }
 
+		int AIFFBitDepth() override
+		{ return 8; }
+
 		void Decode(const int nChannels, const std::span<const char> input, const std::span<char> output) override;
 	};
 
@@ -47,6 +56,9 @@ namespace Pomme::Sound
 
 		int BytesPerPacket() override
 		{ return 34; }
+
+		int AIFFBitDepth() override
+		{ return 16; }
 
 		void Decode(const int nChannels, const std::span<const char> input, const std::span<char> output) override;
 	};
@@ -62,6 +74,9 @@ namespace Pomme::Sound
 
 		int BytesPerPacket() override
 		{ return 1; }
+
+		int AIFFBitDepth() override
+		{ return 8; }
 
 		void Decode(const int nChannels, const std::span<const char> input, const std::span<char> output) override;
 	};

@@ -100,6 +100,24 @@ static inline float Q3Point2D_Distance(
 	return sqrtf(Q3Point2D_DistanceSquared(p1, p2));
 }
 
+static inline void Q3Point2D_Add(
+		const TQ3Point2D* p1,
+		const TQ3Point2D* p2,
+		TQ3Vector2D* result)
+{
+	result->x = p1->x + p2->x;
+	result->y = p1->y + p2->y;
+}
+
+static inline void Q3Point2D_Subtract(
+		const TQ3Point2D* p1,
+		const TQ3Point2D* p2,
+		TQ3Vector2D* result)
+{
+	result->x = p1->x - p2->x;
+	result->y = p1->y - p2->y;
+}
+
 //-----------------------------------------------------------------------------
 #pragma mark Q3Point3D
 
@@ -136,6 +154,26 @@ static inline void Q3Point3D_CrossProductTri(
 	result->x = (v1_y * v2_z) - (v1_z * v2_y);
 	result->y = (v1_z * v2_x) - (v1_x * v2_z);
 	result->z = (v1_x * v2_y) - (v1_y * v2_x);
+}
+
+static inline void Q3Point3D_Add(
+		const TQ3Point3D* p1,
+		const TQ3Point3D* p2,
+		TQ3Vector3D* result)
+{
+	result->x = p1->x + p2->x;
+	result->y = p1->y + p2->y;
+	result->z = p1->z + p2->z;
+}
+
+static inline void Q3Point3D_Subtract(
+		const TQ3Point3D* p1,
+		const TQ3Point3D* p2,
+		TQ3Vector3D* result)
+{
+	result->x = p1->x - p2->x;
+	result->y = p1->y - p2->y;
+	result->z = p1->z - p2->z;
 }
 
 static inline TQ3Point3D* Q3Point3D_Transform(

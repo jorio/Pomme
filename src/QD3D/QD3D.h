@@ -14,18 +14,6 @@ typedef uint32_t	TQ3Uns32;
 typedef int32_t		TQ3Int32;
 typedef int32_t		TQ3ObjectType;
 
-// junk types
-typedef void*		TQ3TransformObject;
-typedef void*		TQ3Object;
-typedef void*		TQ3GroupPosition;
-typedef void*		TQ3GeometryObject;
-typedef void*		TQ3ViewObject;
-typedef void*		TQ3SurfaceShaderObject;
-typedef void*		TQ3StorageObject;
-typedef void*		TQ3ShaderObject;
-typedef void*		TQ3FileObject;
-typedef void*		TQ3TriMeshAttributeData;
-
 typedef enum
 {
 	kQ3False                                    = 0,

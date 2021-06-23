@@ -36,11 +36,7 @@ void Q3MetaFile_Dispose(TQ3MetaFile* metaFile)
 	__Q3GetCookie(metaFile, '3DMF');
 
 	for (int i = 0; i < metaFile->numTextures; i++)
-	{
-		if (metaFile->textures[i]->glTextureName)
-			glDeleteTextures(1, &metaFile->textures[i]->glTextureName);
 		Q3Pixmap_Dispose(metaFile->textures[i]);
-	}
 
 	for (int i = 0; i < metaFile->numMeshes; i++)
 		Q3TriMeshData_Dispose(metaFile->meshes[i]);

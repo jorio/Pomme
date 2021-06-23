@@ -515,7 +515,6 @@ uint32_t Q3MetaFileParser::Parse_txmm_or_txpm(uint32_t chunkType, uint32_t chunk
 	metaFile.textures[newTextureID] = __Q3Alloc<TQ3Pixmap>(1, 'PXMP');
 	TQ3Pixmap& texture = *metaFile.textures[newTextureID];
 
-	texture.glTextureName	= 0;
 	texture.pixelType		= pixelType;
 	texture.bitOrder		= bitOrder;
 	texture.byteOrder		= byteOrder;

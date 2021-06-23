@@ -306,7 +306,6 @@ typedef struct TQ3CameraPlacement
 	TQ3Vector3D                                 upVector;
 } TQ3CameraPlacement;
 
-// WARNING: this structure differs from QD3D.
 typedef struct TQ3Pixmap
 {
 	uint8_t 									*image;
@@ -317,7 +316,6 @@ typedef struct TQ3Pixmap
 	uint32_t									pixelType;
 	uint32_t									bitOrder;
 	uint32_t									byteOrder;
-	uint32_t									glTextureName;
 } TQ3Pixmap;
 
 // WARNING: this structure does not exist in QD3D.

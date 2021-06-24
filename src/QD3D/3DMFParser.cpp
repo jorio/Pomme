@@ -99,8 +99,6 @@ uint32_t Q3MetaFileParser::Parse1Chunk()
 
 		case 'endg':
 			Assert(chunkSize == 0, "illegal endg size");
-//			Assert(containerEnd == 0, "stray endg");
-//			containerEnd = f.Tell();  // force while loop to stop
 			break;
 
 		case 'tmsh':    // TriMesh
@@ -153,22 +151,23 @@ uint32_t Q3MetaFileParser::Parse1Chunk()
 			break;
 
 		case 'txsu':    // TextureShader
-			Assert(chunkSize == 0, "illegal txsu size");
-			break;
-
-		case 'txmm':	// MipmapTexture
-		case 'txpm':	// PixmapTexture
 		{
 			uint32_t internalTextureID;
+
+			Assert(chunkSize == 0, "illegal txsu size");
+
 			if (knownTextures.find(chunkOffset) != knownTextures.end())
 			{
-				printf("Texture already seen!");
+				// We've seen this 'txsu' before. We're here because a 'rfrn' refers to it again.
+				// Don't create a new texture for it.
+				printf("Already seen this txsu.");
 				internalTextureID = knownTextures[chunkOffset];
-				f.Skip(chunkSize);
+				// TODO: Just skip to end of container
 			}
 			else
 			{
-				internalTextureID = Parse_txmm_or_txpm(chunkType, chunkSize);
+				internalTextureID = metaFile.numTextures;
+				__Q3EnlargeArray(metaFile.textures, metaFile.numTextures, 'TXSU');
 				knownTextures[chunkOffset] = internalTextureID;
 			}
 
@@ -183,6 +182,25 @@ uint32_t Q3MetaFileParser::Parse1Chunk()
 
 			break;
 		}
+
+		case 'txmm':	// MipmapTexture (after a txsu)
+		case 'txpm':	// PixmapTexture (after a txsu)
+			if (GetCurrentTextureShader().pixmap)
+			{
+				printf("Pixmap already set for this txsu\n");
+				f.Skip(chunkSize);
+			}
+			else
+			{
+				GetCurrentTextureShader().pixmap = ParsePixmap(chunkType, chunkSize);
+			}
+			break;
+
+		case 'shdr':	// UV clamp/wrap (after a txsu)
+			Assert(chunkSize == 8, "illegal shdr size");
+			GetCurrentTextureShader().boundaryU = (TQ3ShaderUVBoundary) f.Read<uint32_t>();
+			GetCurrentTextureShader().boundaryV = (TQ3ShaderUVBoundary) f.Read<uint32_t>();
+			break;
 
 		case 'rfrn':    // Reference (into TOC)
 		{
@@ -276,7 +294,6 @@ void Q3MetaFileParser::Parse3DMF()
 	printf("\n");
 }
 
-
 void Q3MetaFileParser::Parse_tmsh(uint32_t chunkSize)
 {
 	Assert(chunkSize >= 52, "Illegal tmsh size");
@@ -356,7 +373,6 @@ void Q3MetaFileParser::Parse_tmsh(uint32_t chunkSize)
 	}
 }
 
-
 void Q3MetaFileParser::Parse_atar(uint32_t chunkSize)
 {
 	Assert(chunkSize >= 20, "Illegal atar size");
@@ -435,7 +451,7 @@ void Q3MetaFileParser::Parse_atar(uint32_t chunkSize)
 	}
 }
 
-uint32_t Q3MetaFileParser::Parse_txmm_or_txpm(uint32_t chunkType, uint32_t chunkSize)
+TQ3Pixmap* Q3MetaFileParser::ParsePixmap(uint32_t chunkType, uint32_t chunkSize)
 {
 	size_t chunkHeaderSize = chunkType == 'txmm'? 8*4: 7*4;
 	Assert(chunkSize >= chunkHeaderSize, "incorrect chunk header size");
@@ -472,7 +488,8 @@ uint32_t Q3MetaFileParser::Parse_txmm_or_txpm(uint32_t chunkType, uint32_t chunk
 	}
 	else
 	{
-		Assert(false, "Parse_txmm_or_txpm: Illegal chunkType");
+		Assert(false, "ParsePixmap: Illegal chunkType");
+		return nullptr;
 	}
 
 	uint32_t imageSize = rowBytes * height;
@@ -508,38 +525,38 @@ uint32_t Q3MetaFileParser::Parse_txmm_or_txpm(uint32_t chunkType, uint32_t chunk
 
 	int trimmedRowBytes = bytesPerPixel * width;
 
-	uint32_t newTextureID = metaFile.numTextures;
+	TQ3Pixmap* pixmap = __Q3Alloc<TQ3Pixmap>(1, 'PXMP');
 
-	__Q3EnlargeArray<TQ3Pixmap*>(metaFile.textures, metaFile.numTextures, 'TLST');
-
-	metaFile.textures[newTextureID] = __Q3Alloc<TQ3Pixmap>(1, 'PXMP');
-	TQ3Pixmap& texture = *metaFile.textures[newTextureID];
-
-	texture.pixelType		= pixelType;
-	texture.bitOrder		= bitOrder;
-	texture.byteOrder		= byteOrder;
-	texture.width			= width;
-	texture.height			= height;
-	texture.pixelSize		= bytesPerPixel * 8;
-	texture.rowBytes		= trimmedRowBytes;
-	texture.image			= __Q3Alloc<uint8_t>(trimmedRowBytes * height, 'IMAG');
+	pixmap->pixelType		= pixelType;
+	pixmap->bitOrder		= bitOrder;
+	pixmap->byteOrder		= byteOrder;
+	pixmap->width			= width;
+	pixmap->height			= height;
+	pixmap->pixelSize		= bytesPerPixel * 8;
+	pixmap->rowBytes		= trimmedRowBytes;
+	pixmap->image			= __Q3Alloc<uint8_t>(trimmedRowBytes * height, 'IMAG');
 
 	// Trim padding at end of rows
 	for (uint32_t y = 0; y < height; y++)
 	{
-		f.Read((Ptr) texture.image + y*texture.rowBytes, texture.rowBytes);
+		f.Read((Ptr) pixmap->image + y*pixmap->rowBytes, pixmap->rowBytes);
 		f.Skip(rowBytes - width * bytesPerPixel);
 	}
 
 	// Make every pixel little-endian (especially to avoid breaking 16-bit 1-5-5-5 ARGB textures)
 	if (byteOrder == kQ3EndianBig)
 	{
-		ByteswapInts(bytesPerPixel, width*height, texture.image);
-		texture.byteOrder = kQ3EndianLittle;
+		ByteswapInts(bytesPerPixel, width*height, pixmap->image);
+		pixmap->byteOrder = kQ3EndianLittle;
 	}
 
+	Q3Pixmap_ApplyEdgePadding(pixmap);
 
-	Q3Pixmap_ApplyEdgePadding(&texture);
+	return pixmap;
+}
 
-	return newTextureID;
+TQ3TextureShader& Q3MetaFileParser::GetCurrentTextureShader()
+{
+	Assert(metaFile.numTextures > 0, "txmm/txpm: no txsu opened");
+	return metaFile.textures[metaFile.numTextures - 1];
 }

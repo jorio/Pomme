@@ -36,7 +36,7 @@ void Q3MetaFile_Dispose(TQ3MetaFile* metaFile)
 	__Q3GetCookie(metaFile, '3DMF');
 
 	for (int i = 0; i < metaFile->numTextures; i++)
-		Q3Pixmap_Dispose(metaFile->textures[i]);
+		Q3Pixmap_Dispose(metaFile->textures[i].pixmap);
 
 	for (int i = 0; i < metaFile->numMeshes; i++)
 		Q3TriMeshData_Dispose(metaFile->meshes[i]);
@@ -44,7 +44,7 @@ void Q3MetaFile_Dispose(TQ3MetaFile* metaFile)
 	for (int i = 0; i < metaFile->numTopLevelGroups; i++)
 		__Q3Dispose(metaFile->topLevelGroups[i].meshes, 'GMSH');
 
-	__Q3Dispose(metaFile->textures,				'TLST');
+	__Q3Dispose(metaFile->textures,				'TXSU');
 	__Q3Dispose(metaFile->meshes,				'MLST');
 	__Q3Dispose(metaFile->topLevelGroups,		'GLST');
 	__Q3Dispose(metaFile,						'3DMF');

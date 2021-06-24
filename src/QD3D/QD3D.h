@@ -46,6 +46,13 @@ typedef enum
 	kQ3TexturingModeSize32						= 0xFFFFFFFF,
 } TQ3TexturingMode;
 
+typedef enum
+{
+	kQ3ShaderUVBoundaryWrap                     = 0,
+	kQ3ShaderUVBoundaryClamp                    = 1,
+	kQ3ShaderUVBoundarySize32                   = 0xFFFFFFFF
+} TQ3ShaderUVBoundary;
+
 enum TQ3AttributeTypes
 {
 	kQ3AttributeTypeNone                        = 0,            // N/A
@@ -319,10 +326,18 @@ typedef struct TQ3Pixmap
 } TQ3Pixmap;
 
 // WARNING: this structure does not exist in QD3D.
+typedef struct TQ3TextureShader
+{
+	TQ3Pixmap									*pixmap;
+	TQ3ShaderUVBoundary							boundaryU;
+	TQ3ShaderUVBoundary							boundaryV;
+} TQ3TextureShader;
+
+// WARNING: this structure does not exist in QD3D.
 typedef struct TQ3MetaFile
 {
 	int 										numTextures;
-	TQ3Pixmap									**textures;
+	TQ3TextureShader							*textures;
 
 	int											numMeshes;
 	TQ3TriMeshData								**meshes;

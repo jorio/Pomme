@@ -32,7 +32,9 @@ private:
 	void Parse_atar(uint32_t chunkSize);
 
 	// Parse mipmap/pixmap texture chunk
-	uint32_t Parse_txmm_or_txpm(uint32_t chunkType, uint32_t chunkSize);
+	TQ3Pixmap* ParsePixmap(uint32_t chunkType, uint32_t chunkSize);
+
+	TQ3TextureShader& GetCurrentTextureShader();
 
 	TQ3MetaFile& metaFile;
 	std::istream& baseStream;

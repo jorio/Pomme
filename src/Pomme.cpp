@@ -68,12 +68,23 @@ void ShowCursor()
 void Pomme::Init()
 {
 	Pomme::Files::Init();
+
+#ifndef POMME_NO_GRAPHICS
 	Pomme::Graphics::Init();
+#endif
+
+#ifndef POMME_NO_SOUND
 	Pomme::Sound::Init();
+#endif
+
+#ifndef POMME_NO_INPUT
 	Pomme::Input::Init();
+#endif
 }
 
 void Pomme::Shutdown()
 {
+#ifndef POMME_NO_SOUND
 	Pomme::Sound::Shutdown();
+#endif
 }

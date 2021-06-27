@@ -97,7 +97,7 @@ static void DumpResource(const ResourceMetadata& meta)
 	dump.close();
 	std::cout << "wrote " << outPath << "\n";
 
-#if _DEBUG
+#if _DEBUG && !POMME_NO_SOUND
 	// Dump sounds as AIFF as well
 	if (meta.type == 'snd ')
 	{

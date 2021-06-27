@@ -22,22 +22,7 @@ set(POMME_SOURCES
 	${POMME_SRCDIR}/Files/HostVolume.h
 	${POMME_SRCDIR}/Files/Resources.cpp
 	${POMME_SRCDIR}/Files/Volume.h
-	${POMME_SRCDIR}/Graphics/ARGBPixmap.cpp
-	${POMME_SRCDIR}/Graphics/Color.cpp
-	${POMME_SRCDIR}/Graphics/ColorManager.cpp
-	${POMME_SRCDIR}/Graphics/Graphics.cpp
-	${POMME_SRCDIR}/Graphics/PICT.cpp
-	${POMME_SRCDIR}/Graphics/SysFont.h
-	${POMME_SRCDIR}/Graphics/SystemPalettes.cpp
-	${POMME_SRCDIR}/Input/SDLInput.cpp
 	${POMME_SRCDIR}/Memory/Memory.cpp
-	${POMME_SRCDIR}/Sound/AIFF.cpp
-	${POMME_SRCDIR}/Sound/cmixer.cpp
-	${POMME_SRCDIR}/Sound/cmixer.h
-	${POMME_SRCDIR}/Sound/IMA4.cpp
-	${POMME_SRCDIR}/Sound/MACE.cpp
-	${POMME_SRCDIR}/Sound/SoundManager.cpp
-	${POMME_SRCDIR}/Sound/xlaw.cpp
 	${POMME_SRCDIR}/Text/TextUtilities.cpp
 	${POMME_SRCDIR}/Time/TimeManager.cpp
 	${POMME_SRCDIR}/Utilities/bigendianstreams.cpp
@@ -56,12 +41,50 @@ set(POMME_SOURCES
 	$<$<BOOL:${WIN32}>:${POMME_SRCDIR}/Platform/Windows/PommeWindows.h>
 )
 
+if (NOT(POMME_NO_SOUND))
+	list(APPEND POMME_SOURCES
+		${POMME_SRCDIR}/Sound/AIFF.cpp
+		${POMME_SRCDIR}/Sound/cmixer.cpp
+		${POMME_SRCDIR}/Sound/cmixer.h
+		${POMME_SRCDIR}/Sound/IMA4.cpp
+		${POMME_SRCDIR}/Sound/MACE.cpp
+		${POMME_SRCDIR}/Sound/SoundManager.cpp
+		${POMME_SRCDIR}/Sound/xlaw.cpp
+	)
+else()
+	add_compile_definitions(POMME_NO_SOUND)
+endif()
+
+if (NOT(POMME_NO_GRAPHICS))
+	list(APPEND POMME_SOURCES
+		${POMME_SRCDIR}/Graphics/ARGBPixmap.cpp
+		${POMME_SRCDIR}/Graphics/Color.cpp
+		${POMME_SRCDIR}/Graphics/ColorManager.cpp
+		${POMME_SRCDIR}/Graphics/Graphics.cpp
+		${POMME_SRCDIR}/Graphics/PICT.cpp
+		${POMME_SRCDIR}/Graphics/SysFont.h
+		${POMME_SRCDIR}/Graphics/SystemPalettes.cpp
+	)
+else()
+	add_compile_definitions(POMME_NO_GRAPHICS)
+endif()
+
+if (NOT(POMME_NO_INPUT))
+	list(APPEND POMME_SOURCES
+		${POMME_SRCDIR}/Input/SDLInput.cpp
+	)
+else()
+	add_compile_definitions(POMME_NO_INPUT)
+endif()
+
 if (NOT(POMME_NO_VIDEO))
 	list(APPEND POMME_SOURCES
 		${POMME_SRCDIR}/Video/Cinepak.cpp
 		${POMME_SRCDIR}/Video/Cinepak.h
 		${POMME_SRCDIR}/Video/moov.cpp
 	)
+else()
+	add_compile_definitions(POMME_NO_VIDEO)
 endif()
 
 if (NOT(POMME_NO_QD3D))
@@ -73,6 +96,8 @@ if (NOT(POMME_NO_QD3D))
 			${POMME_SRCDIR}/QD3D/QD3DMath.cpp
 			${POMME_SRCDIR}/QD3D/QD3DMath.h
 			)
+else()
+	add_compile_definitions(POMME_NO_QD3D)
 endif()
 
 add_library(${PROJECT_NAME} ${POMME_SOURCES})

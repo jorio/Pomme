@@ -53,7 +53,7 @@ void Pomme::Init()
 	Pomme::Graphics::Init();
 #endif
 
-#ifndef POMME_NO_SOUND
+#ifndef POMME_NO_SOUND_PLAYBACK
 	Pomme::Sound::Init();
 #endif
 
@@ -64,7 +64,7 @@ void Pomme::Init()
 
 void Pomme::Shutdown()
 {
-#ifndef POMME_NO_SOUND
+#ifndef POMME_NO_SOUND_PLAYBACK
 	Pomme::Sound::Shutdown();
 #endif
 }

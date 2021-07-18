@@ -22,7 +22,7 @@
 ** IN THE SOFTWARE.
 **/
 
-#include "Sound/cmixer.h"
+#include "cmixer.h"
 #include "Utilities/structpack.h"
 #include <SDL.h>
 

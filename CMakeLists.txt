@@ -44,15 +44,23 @@ set(POMME_SOURCES
 if (NOT(POMME_NO_SOUND))
 	list(APPEND POMME_SOURCES
 		${POMME_SRCDIR}/Sound/AIFF.cpp
-		${POMME_SRCDIR}/Sound/cmixer.cpp
-		${POMME_SRCDIR}/Sound/cmixer.h
 		${POMME_SRCDIR}/Sound/IMA4.cpp
 		${POMME_SRCDIR}/Sound/MACE.cpp
-		${POMME_SRCDIR}/Sound/SoundManager.cpp
+		${POMME_SRCDIR}/Sound/SoundUtilities.cpp
 		${POMME_SRCDIR}/Sound/xlaw.cpp
 	)
 else()
 	add_compile_definitions(POMME_NO_SOUND)
+endif()
+
+if (NOT(POMME_NO_SOUND_PLAYBACK))
+	list(APPEND POMME_SOURCES
+		${POMME_SRCDIR}/Sound/cmixer.cpp
+		${POMME_SRCDIR}/Sound/cmixer.h
+		${POMME_SRCDIR}/Sound/SoundManager.cpp
+		)
+else()
+	add_compile_definitions(POMME_NO_SOUND_PLAYBACK)
 endif()
 
 if (NOT(POMME_NO_GRAPHICS))

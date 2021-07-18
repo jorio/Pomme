@@ -16,6 +16,23 @@ namespace Pomme::Sound
 
 	void ReadAIFF(std::istream& input, cmixer::WavStream& output);
 
+	struct SampledSoundInfo
+	{
+		int16_t nChannels;
+		uint32_t nPackets;
+		int16_t codecBitDepth;
+		bool bigEndian;
+		double sampleRate;
+		bool isCompressed;
+		uint32_t compressionType;
+		char* dataStart;
+		int compressedLength;
+		int decompressedLength;
+		int8_t baseNote;
+		uint32_t loopStart;
+		uint32_t loopEnd;
+	};
+
 	class Codec
 	{
 	public:
@@ -78,6 +95,10 @@ namespace Pomme::Sound
 
 		void Decode(const int nChannels, const std::span<const char> input, const std::span<char> output) override;
 	};
+
+	void GetSoundInfo(const Ptr sndhdr, SampledSoundInfo& info);
+
+	void GetSoundInfoFromSndResource(Handle sndHandle, SampledSoundInfo& info);
 
 	std::unique_ptr<Pomme::Sound::Codec> GetCodec(uint32_t fourCC);
 }

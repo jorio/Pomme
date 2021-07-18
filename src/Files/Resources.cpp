@@ -1,10 +1,12 @@
 #include "Pomme.h"
 #include "PommeFiles.h"
+#include "Memory/BlockDescriptor.h"
 #include "Utilities/bigendianstreams.h"
 
 #include <algorithm>
 #include <fstream>
 #include <iostream>
+#include <cstring>
 #include "CompilerSupport/filesystem.h"
 
 #if _DEBUG
@@ -295,6 +297,29 @@ short Count1Resources(ResType theType)
 	}
 }
 
+short Count1Types()
+{
+	return (short) GetCurRF().resourceMap.size();
+}
+
+void Get1IndType(ResType* theType, short index)
+{
+	const auto& resourceMap = GetCurRF().resourceMap;
+
+	for (auto& it : resourceMap)
+	{
+		if (index == 1)			// remember, index is 1-based here
+		{
+			*theType = it.first;
+			return;
+		}
+
+		index--;
+	}
+
+	*theType = 0;
+}
+
 Handle GetResource(ResType theType, short theID)
 {
 	lastResError = noErr;
@@ -310,9 +335,16 @@ Handle GetResource(ResType theType, short theID)
 		if (resourcesOfType.end() == resourcesOfType.find(theID))
 			continue;
 
+		// Found it!
 		const auto& meta = fork.resourceMap.at(theType).at(theID);
 		auto& forkStream = Pomme::Files::GetStream(rezSearchStack[i].fileRefNum);
+
+		// Allocate handle
 		Handle handle = NewHandle(meta.size);
+
+		// Set pointer to resource metadata
+		Pomme::Memory::BlockDescriptor::HandleToBlock(handle)->rezMeta = &meta;
+
 		forkStream.seekg(meta.dataOffset, std::ios::beg);
 		forkStream.read(*handle, meta.size);
 
@@ -321,6 +353,54 @@ Handle GetResource(ResType theType, short theID)
 
 	lastResError = resNotFound;
 	return nil;
+}
+
+Handle Get1IndResource(ResType theType, short index)
+{
+	lastResError = noErr;
+
+	const auto& idsToResources = GetCurRF().resourceMap.at(theType);
+
+	for (auto& it : idsToResources)
+	{
+		if (index == 1)			// remember, index is 1-based here
+		{
+			return GetResource(theType, it.second.id);
+		}
+
+		index--;
+	}
+
+	lastResError = resNotFound;
+	return nullptr;
+}
+
+void GetResInfo(Handle theResource, short* theID, ResType* theType, char* name256)
+{
+	lastResError = noErr;
+
+	if (!theResource)
+	{
+		lastResError = resNotFound;
+		return;
+	}
+
+	auto blockDescriptor = Pomme::Memory::BlockDescriptor::HandleToBlock(theResource);
+
+	if (!blockDescriptor->rezMeta)
+	{
+		lastResError = resNotFound;
+		return;
+	}
+
+	if (theID)
+		*theID = blockDescriptor->rezMeta->id;
+
+	if (theType)
+		*theType = blockDescriptor->rezMeta->type;
+
+	if (name256)
+		snprintf(name256, 256, "%s", blockDescriptor->rezMeta->name.c_str());
 }
 
 void ReleaseResource(Handle theResource)
@@ -352,7 +432,13 @@ void WriteResource(Handle theResource)
 void DetachResource(Handle theResource)
 {
 	lastResError = noErr;
-	ONCE(TODOMINOR());
+
+	auto* blockDescriptor = Pomme::Memory::BlockDescriptor::HandleToBlock(theResource);
+
+	if (!blockDescriptor->rezMeta)
+		lastResError = resNotFound;
+
+	blockDescriptor->rezMeta = nullptr;
 }
 
 long GetResourceSizeOnDisk(Handle theResource)

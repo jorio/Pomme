@@ -97,7 +97,22 @@ void CloseResFile(short refNum);
 // in the current resource file only.
 short Count1Resources(ResType);
 
+// Returns total number of resource types
+// in the current resource file only.
+short Count1Types(void);
+
+// Gets resource type available in current resource file.
+// Note that the index is 1-based!
+void Get1IndType(ResType* theType, short index);
+
 Handle GetResource(ResType theType, short theID);
+
+// Reads a resource from the current resource file.
+// `index` isn't the actual resource ID!
+// `index` ranges from 1 to the number returned by Get1IndType().
+Handle Get1IndResource(ResType theType, short index);
+
+void GetResInfo(Handle theResource, short* theID, ResType* theType, char* name256);
 
 void ReleaseResource(Handle theResource);
 

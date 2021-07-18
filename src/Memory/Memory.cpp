@@ -3,31 +3,36 @@
 #include <cstring>
 
 #include "Pomme.h"
-#include "Utilities/FixedPool.h"
+#include "Memory/BlockDescriptor.h"
+
+using namespace Pomme;
+using namespace Pomme::Memory;
 
 #define LOG POMME_GENLOG(POMME_DEBUG_MEMORY, "MEMO")
 
 //-----------------------------------------------------------------------------
 // Implementation-specific stuff
 
-static const int  HANDLE_MAGIC_LENGTH = 8;
-static const char HANDLE_MAGIC[HANDLE_MAGIC_LENGTH]      = "LIVEhdl";
-static const char HANDLE_MAGIC_DEAD[HANDLE_MAGIC_LENGTH] = "DEADhdl";
-
-struct BlockDescriptor
+BlockDescriptor::BlockDescriptor(Size theSize)
 {
-	Ptr buf;
-	char magic[HANDLE_MAGIC_LENGTH];
-	Size size;
-};
+	buf = new char[theSize];
+	magic = 'LIVE';
+	size = theSize;
+}
 
-// these must not move around
-static Pomme::FixedPool<BlockDescriptor, UInt16, 1000> blocks;
+BlockDescriptor::~BlockDescriptor()
+{
+	delete[] buf;
+	buf = nullptr;
+	size = 0;
+	rezMeta = nullptr;
+	magic = 'DEAD';
+}
 
-static BlockDescriptor* HandleToBlock(Handle h)
+BlockDescriptor* BlockDescriptor::HandleToBlock(Handle h)
 {
 	auto bd = (BlockDescriptor*) h;
-	if (0 != memcmp(bd->magic, HANDLE_MAGIC, HANDLE_MAGIC_LENGTH))
+	if (bd->magic != 'LIVE')
 		throw std::runtime_error("corrupted handle");
 	return bd;
 }
@@ -35,19 +40,15 @@ static BlockDescriptor* HandleToBlock(Handle h)
 //-----------------------------------------------------------------------------
 // Memory: Handle
 
-Handle NewHandle(Size s)
+Handle NewHandle(Size size)
 {
-	if (s < 0) throw std::invalid_argument("trying to alloc negative size handle");
+	if (size < 0)
+		throw std::invalid_argument("trying to alloc negative size handle");
 
-	BlockDescriptor* block = blocks.Alloc();
-	block->buf = new char[s];
-	memcpy(block->magic, HANDLE_MAGIC, HANDLE_MAGIC_LENGTH);
-	block->size = s;
+	BlockDescriptor* block = new BlockDescriptor(size);
 
 	if ((Ptr) &block->buf != (Ptr) block)
 		throw std::runtime_error("buffer address mismatches block address");
-
-	LOG << (void*) block->buf << ", size " << s << "\n";
 
 	return &block->buf;
 }
@@ -78,7 +79,7 @@ Handle TempNewHandle(Size s, OSErr* err)
 
 Size GetHandleSize(Handle h)
 {
-	return HandleToBlock(h)->size;
+	return BlockDescriptor::HandleToBlock(h)->size;
 }
 
 void SetHandleSize(Handle handle, Size byteCount)
@@ -88,13 +89,7 @@ void SetHandleSize(Handle handle, Size byteCount)
 
 void DisposeHandle(Handle h)
 {
-	LOG << (void*) *h << "\n";
-	BlockDescriptor* b = HandleToBlock(h);
-	delete[] b->buf;
-	b->buf = 0;
-	b->size = -1;
-	memcpy(b->magic, HANDLE_MAGIC_DEAD, HANDLE_MAGIC_LENGTH);
-	blocks.Dispose(b);
+	delete BlockDescriptor::HandleToBlock(h);
 }
 
 OSErr PtrToHand(const void* srcPtr, Handle* dstHndl, Size size)

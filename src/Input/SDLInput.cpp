@@ -190,9 +190,29 @@ void GetMouse(Point* mouseLoc)
 
 Boolean Button(void)
 {
-	ONCE(TODOMINOR());
-	return false;
+	return SDL_GetMouseState(NULL, NULL) & SDL_BUTTON_LMASK;
 }
+
+//-----------------------------------------------------------------------------
+// Mouse cursor
+
+void InitCursor()
+{
+	SDL_ShowCursor(1);
+}
+
+void HideCursor()
+{
+	SDL_ShowCursor(0);
+}
+
+void ShowCursor()
+{
+	SDL_ShowCursor(1);
+}
+
+//-----------------------------------------------------------------------------
+// Init
 
 void Pomme::Input::Init()
 {

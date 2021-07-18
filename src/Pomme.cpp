@@ -8,8 +8,6 @@
 #include "PommeSound.h"
 #include "PommeInput.h"
 
-#include "SDL.h"
-
 #if _WIN32
 	#include "Platform/Windows/PommeWindows.h"
 #endif
@@ -42,24 +40,6 @@ void SysBeep(short duration)
 void FlushEvents(short, short)
 {
 	TODOMINOR();
-}
-
-//-----------------------------------------------------------------------------
-// Mouse cursor
-
-void InitCursor()
-{
-	SDL_ShowCursor(1);
-}
-
-void HideCursor()
-{
-	SDL_ShowCursor(0);
-}
-
-void ShowCursor()
-{
-	SDL_ShowCursor(1);
 }
 
 //-----------------------------------------------------------------------------

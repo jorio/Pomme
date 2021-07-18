@@ -1,42 +1,20 @@
 #include "PommeDebug.h"
-
-#include <SDL.h>
-#include <sstream>
+#include <cstring>
 #include <iostream>
 
 void ImplementMe(const char* fn, std::string msg, int severity)
 {
-	if (severity >= 0)
-	{
-		std::stringstream ss;
-		ss << "[TODO] \x1b[1m" << fn << "\x1b[22m";
-		if (!msg.empty())
-		{
-			ss << ": " << msg;
-		}
-		auto str = ss.str();
-		std::cerr << (severity > 0 ? "\x1b[31m" : "\x1b[33m") << str << "\x1b[0m\n";
-	}
+	std::stringstream ss;
+	ss << "[TODO] \x1b[1m" << fn << "\x1b[22m";
+
+	if (!msg.empty())
+		ss << ": " << msg;
+
+	auto str = ss.str();
+	std::cerr << (severity > 0 ? "\x1b[31m" : "\x1b[33m") << str << "\x1b[0m\n";
 
 	if (severity >= 2)
-	{
-		std::stringstream ss;
-		ss << fn << "()";
-		if (!msg.empty()) ss << "\n" << msg;
-
-		auto str = ss.str();
-
-		int mbflags = SDL_MESSAGEBOX_ERROR;
-		if (severity == 0) mbflags = SDL_MESSAGEBOX_INFORMATION;
-		if (severity == 1) mbflags = SDL_MESSAGEBOX_WARNING;
-
-		SDL_ShowSimpleMessageBox(mbflags, "Source port TODO", str.c_str(), nullptr);
-	}
-
-	if (severity >= 2)
-	{
-		abort();
-	}
+		throw std::runtime_error(str);
 }
 
 std::string Pomme::FourCCString(uint32_t fourCC, char filler)
@@ -49,9 +27,8 @@ std::string Pomme::FourCCString(uint32_t fourCC, char filler)
 	{
 		char c = (fourCC >> shift) & 0xFF;
 
-		// Replace any non-alphanumeric character with the filler character.
-		// This ensures that the resulting string is suitable for use as a filename.
-		if (!isalnum(c))
+		// Replace symbols to make suitable for use as filename
+		if (!isalnum(c) && !strchr("!#$%&'()+,-.;=@[]^_`{}", c))
 			c = filler;
 
 		stringBuffer[i] = c;

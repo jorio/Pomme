@@ -6,7 +6,6 @@ extern "C"
 #endif
 
 #include "PommeTypes.h"
-#include <SDL_opengl.h>
 #include <stdbool.h>
 
 typedef float		TQ3Float32;

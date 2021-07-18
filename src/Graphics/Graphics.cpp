@@ -1,13 +1,13 @@
 #include "Pomme.h"
+#include "PommeFiles.h"
 #include "PommeGraphics.h"
+#include "PommeMemory.h"
 #include "SysFont.h"
 #include "Utilities/memstream.h"
 
 #include <iostream>
 #include <memory>
-#include <SDL.h>
-#include <SDL_opengl.h>
-#include <PommeFiles.h>
+#include <cstring>
 
 using namespace Pomme;
 using namespace Pomme::Graphics;
@@ -673,56 +673,4 @@ void DrawChar(char c)
 	}
 
 	penX += glyph.width;
-}
-
-// ----------------------------------------------------------------------------
-// Icons
-
-void Pomme::Graphics::SetWindowIconFromIcl8Resource(SDL_Window* window, short icl8ID)
-{
-	Handle colorIcon	= GetResource('icl8', icl8ID);
-	Handle bwIcon		= GetResource('ICN#', icl8ID);
-
-	if (1024 != GetHandleSize(colorIcon))
-	{
-		DisposeHandle(colorIcon);
-		DisposeHandle(bwIcon);
-		throw std::invalid_argument("icl8 resource has incorrect size");
-	}
-
-	if (256 != GetHandleSize(bwIcon))
-	{
-		DisposeHandle(colorIcon);
-		DisposeHandle(bwIcon);
-		throw std::invalid_argument("ICN# resource has incorrect size");
-	}
-
-	uint32_t* maskScanlines = (uint32_t*)(*bwIcon + 128);  // mask starts 128 bytes into ICN# resource
-	ByteswapInts(4, 32, maskScanlines);
-
-	const int width = 32;
-	const int height = 32;
-
-	SDL_Surface* icon = SDL_CreateRGBSurface(0, width, height, 32, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
-	for (int y = 0; y < height; y++)
-	{
-		uint32_t* out = (uint32_t*) ((char*) icon->pixels + icon->pitch * y);
-		for (int x = 0; x < width; x++)
-		{
-			uint8_t paletteEntry = (*colorIcon)[y * width + x];
-			uint32_t argb = Pomme::Graphics::clut8[paletteEntry];
-			bool masked = maskScanlines[y] & (1 << (width - 1 - x));
-			if (!masked)
-			{
-				argb &= 0x00FFFFFF;
-			}
-			*out++ = argb;
-		}
-	}
-
-	SDL_SetWindowIcon(window, icon);
-	SDL_FreeSurface(icon);
-
-	DisposeHandle(colorIcon);
-	DisposeHandle(bwIcon);
 }

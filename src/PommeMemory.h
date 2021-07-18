@@ -21,4 +21,21 @@ namespace Pomme::Memory
 
 		static BlockDescriptor* HandleToBlock(Handle h);
 	};
+
+	class DisposeHandleGuard
+	{
+	public:
+		DisposeHandleGuard(Handle theHandle)
+			: h(theHandle)
+		{}
+
+		~DisposeHandleGuard()
+		{
+			if (h)
+				DisposeHandle(h);
+		}
+
+	private:
+		Handle h;
+	};
 }

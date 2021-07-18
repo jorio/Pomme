@@ -3,7 +3,7 @@
 #include <cstring>
 
 #include "Pomme.h"
-#include "Memory/BlockDescriptor.h"
+#include "PommeMemory.h"
 
 using namespace Pomme;
 using namespace Pomme::Memory;

@@ -3,7 +3,6 @@
 #include "PommeTypes.h"
 #include <istream>
 #include <vector>
-#include <SDL_video.h>
 
 namespace Pomme::Graphics
 {
@@ -54,7 +53,10 @@ namespace Pomme::Graphics
 
 	CGrafPtr GetScreenPort(void);
 
-	void SetWindowIconFromIcl8Resource(SDL_Window* sdlWindow, short i);
+	Handle GetIcl8AsARGB(short i);
+	Handle GetIcs8AsARGB(short i);
+	Handle GetIcl4AsARGB(short i);
+	Handle GetIcs4AsARGB(short i);
 
 	inline int Width(const Rect& r)
 	{ return r.right - r.left; }

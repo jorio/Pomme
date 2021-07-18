@@ -1,6 +1,6 @@
 #include "Pomme.h"
 #include "PommeFiles.h"
-#include "Memory/BlockDescriptor.h"
+#include "PommeMemory.h"
 #include "Utilities/bigendianstreams.h"
 
 #include <algorithm>

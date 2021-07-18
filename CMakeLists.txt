@@ -69,6 +69,7 @@ if (NOT(POMME_NO_GRAPHICS))
 		${POMME_SRCDIR}/Graphics/Color.cpp
 		${POMME_SRCDIR}/Graphics/ColorManager.cpp
 		${POMME_SRCDIR}/Graphics/Graphics.cpp
+		${POMME_SRCDIR}/Graphics/Icons.cpp
 		${POMME_SRCDIR}/Graphics/PICT.cpp
 		${POMME_SRCDIR}/Graphics/SysFont.h
 		${POMME_SRCDIR}/Graphics/SystemPalettes.cpp

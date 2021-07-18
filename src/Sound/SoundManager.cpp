@@ -609,9 +609,14 @@ OSErr SndDoImmediate(SndChannelPtr chan, const SndCommand* cmd)
 	{
 		uint16_t lvol = (cmd->param2      ) & 0xFFFF;
 		uint16_t rvol = (cmd->param2 >> 16) & 0xFFFF;
+		uint32_t volsum = lvol + rvol;
 
-		double pan = (double)rvol / (rvol + lvol);
-		pan = (pan - 0.5) * 2.0;  // Transpose pan from [0...1] to [-1...+1]
+		double pan = 0;
+		if (volsum != 0)  // don't divide by zero
+		{
+			pan = (double)rvol / volsum;
+			pan = 2*pan - 1;  // Transpose pan from [0...1] to [-1...+1]
+		}
 
 		impl.pan = pan;
 		impl.gain = std::max(lvol, rvol) / 256.0;

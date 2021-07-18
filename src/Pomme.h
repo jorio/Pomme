@@ -130,11 +130,6 @@ long GetResourceSizeOnDisk(Handle);
 
 long SizeResource(Handle);
 
-// After calling this function, Pomme will dump all resources to separate files
-// whenever a new resource fork is opened.
-// Pass in NULL to stop dumping resources.
-void Pomme_StartDumpingResources(const char* hostDestinationPath);
-
 //-----------------------------------------------------------------------------
 // QuickDraw 2D: Errors
 

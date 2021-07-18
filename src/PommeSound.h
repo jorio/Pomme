@@ -16,8 +16,6 @@ namespace Pomme::Sound
 
 	void ReadAIFF(std::istream& input, cmixer::WavStream& output);
 
-	void DumpSoundResourceToAIFF(Handle input, std::ostream& output, const std::string& resourceName);
-
 	class Codec
 	{
 	public:

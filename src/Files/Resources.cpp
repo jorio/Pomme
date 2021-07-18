@@ -27,8 +27,6 @@ static std::vector<ResourceFork> rezSearchStack;
 
 static int rezSearchStackIndex = 0;
 
-static fs::path rezDumpHostDestinationPath = "";
-
 //-----------------------------------------------------------------------------
 // Internal
 
@@ -43,76 +41,6 @@ static void ResourceAssert(bool condition, const char* message)
 static ResourceFork& GetCurRF()
 {
 	return rezSearchStack[rezSearchStackIndex];
-}
-
-#if 0
-static void PrintStack(const char* msg) {
-	LOG << "------ RESOURCE SEARCH STACK " << msg << " -------\n";
-	for (int i = int(rezSearchStack.size() - 1); i >= 0; i--) {
-		LOG	<< (rezSearchStackIndex == i? " =====> " : "        ")
-			<< " StackPos=" << i << " "
-			<< " RefNum=" << rezSearchStack[i].fileRefNum << " "
-//			<< Pomme::Files::GetHostFilename(rezSearchStack[i].fileRefNum)
-			<< "\n";
-	}
-	LOG << "------------------------------------\n";
-}
-#endif
-
-static void DumpResource(const ResourceMetadata& meta)
-{
-	const FSSpec& spec = Pomme::Files::GetSpec(meta.forkRefNum);
-
-	Handle handle = NewHandle(meta.size);
-	auto& fork = Pomme::Files::GetStream(meta.forkRefNum);
-	fork.seekg(meta.dataOffset, std::ios::beg);
-	fork.read(*handle, meta.size);
-	
-	fs::path outPath;
-	outPath = rezDumpHostDestinationPath;
-	outPath /= spec.cName;
-	outPath /= Pomme::FourCCString(meta.type, '_');
-	fs::create_directories(outPath);
-	
-	std::stringstream ss;
-	ss << meta.id;
-	if (!meta.name.empty())
-	{
-		ss << "-";
-		for (auto c: meta.name)
-			ss << (char)(isalnum(c)? c: '_');
-	}
-	outPath /= ss.str();
-	outPath += "." + Pomme::FourCCString(meta.type, '_');
-
-	std::ofstream dump(outPath, std::ios::binary);
-
-	// Add a 512-byte blank header to PICTs so tools such as ImageMagick or Preview.app will display them
-	if (meta.type == 'PICT')
-	{
-		for (int i = 0; i < 512; i++)
-			dump.put(0);
-	}
-
-
-	dump.write(*handle, meta.size);
-	dump.close();
-	std::cout << "wrote " << outPath << "\n";
-
-#if _DEBUG && !POMME_NO_SOUND
-	// Dump sounds as AIFF as well
-	if (meta.type == 'snd ')
-	{
-		outPath.replace_extension(".aiff");
-		std::ofstream aiff(outPath, std::ios::binary);
-		Pomme::Sound::DumpSoundResourceToAIFF(handle, aiff, meta.name);
-		aiff.close();
-
-		std::cout << "wrote " << outPath << "\n";
-	}
-#endif
-
-	DisposeHandle(handle);
 }
 
 //-----------------------------------------------------------------------------
@@ -214,10 +142,6 @@ short FSpOpenResFile(const FSSpec* spec, char permission)
 			resMetadata.size       = size;
 			resMetadata.name       = name;
 			GetCurRF().resourceMap[resType][resID] = resMetadata;
-
-			// Dump resource to file (if user called Pomme_StartDumpingResource)
-			if (!rezDumpHostDestinationPath.empty())
-				DumpResource(resMetadata);
 		}
 	}
 
@@ -450,16 +374,4 @@ long GetResourceSizeOnDisk(Handle theResource)
 long SizeResource(Handle theResource)
 {
 	return GetResourceSizeOnDisk(theResource);
-}
-
-void Pomme_StartDumpingResources(const char* hostDestinationPath)
-{
-	if (hostDestinationPath)
-	{
-		rezDumpHostDestinationPath = hostDestinationPath;
-	}
-	else
-	{
-		rezDumpHostDestinationPath.clear();
-	}
 }

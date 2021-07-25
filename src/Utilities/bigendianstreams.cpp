@@ -44,11 +44,16 @@ std::vector<unsigned char> Pomme::BigEndianIStream::ReadBytes(size_t n)
 	return buf;
 }
 
-std::string Pomme::BigEndianIStream::ReadPascalString()
+std::string Pomme::BigEndianIStream::ReadPascalString(int padToAlignment)
 {
 	int length = Read<uint8_t>();
 	auto bytes = ReadBytes(length);
 	bytes.push_back('\0');
+
+	int padding = (length + 1) % padToAlignment;
+	if (padding != 0)
+		Skip(padding);
+
 	return std::string((const char*) &bytes.data()[0]);
 }
 

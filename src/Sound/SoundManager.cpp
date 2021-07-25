@@ -197,7 +197,7 @@ public:
 //-----------------------------------------------------------------------------
 // Internal utilities
 
-static inline ChannelImpl& GetImpl(SndChannelPtr chan)
+static inline ChannelImpl& GetChannelImpl(SndChannelPtr chan)
 {
 	return *(ChannelImpl*) chan->channelImpl;
 }
@@ -309,7 +309,7 @@ OSErr SndDisposeChannel(SndChannelPtr macChanPtr, Boolean quietNow)
 	{
 		TODO2("SndDisposeChannel: quietNow == false is not implemented");
 	}
-	delete &GetImpl(macChanPtr);
+	delete &GetChannelImpl(macChanPtr);
 	return noErr;
 }
 
@@ -317,7 +317,7 @@ OSErr SndChannelStatus(SndChannelPtr chan, short theLength, SCStatusPtr theStatu
 {
 	*theStatus = {};
 
-	auto& source = GetImpl(chan).source;
+	auto& source = GetChannelImpl(chan).source;
 
 	theStatus->scChannelPaused = source.GetState() == cmixer::CM_STATE_PAUSED;
 	theStatus->scChannelBusy   = source.GetState() == cmixer::CM_STATE_PLAYING;
@@ -331,7 +331,8 @@ static void InstallSoundInChannel(SndChannelPtr chan, const Ptr sampledSoundHead
 	//---------------------------------
 	// Get internal channel
 
-	auto& impl = GetImpl(chan);
+
+	auto& impl = GetChannelImpl(chan);
 	impl.Recycle();
 
 	//---------------------------------
@@ -391,7 +392,7 @@ static void InstallSoundInChannel(SndChannelPtr chan, const Ptr sampledSoundHead
 
 OSErr SndDoImmediate(SndChannelPtr chan, const SndCommand* cmd)
 {
-	auto& impl = GetImpl(chan);
+	auto& impl = GetChannelImpl(chan);
 
 	// Discard the high bit of the command (it indicates whether an 'snd ' resource has associated data).
 	switch (cmd->cmd & 0x7FFF)
@@ -509,13 +510,41 @@ OSErr SndStartFilePlay(
 		return unimpErr;
 	}
 
-	auto& impl = GetImpl(chan);
+	auto& impl = GetChannelImpl(chan);
 	impl.Recycle();
 
-	auto& stream = Pomme::Files::GetStream(fRefNum);
+	auto& fileStream = Pomme::Files::GetStream(fRefNum);
+
 	// Rewind -- the file might've been fully played already and we might just be trying to loop it
-	stream.seekg(0, std::ios::beg);
-	Pomme::Sound::ReadAIFF(stream, impl.source);
+	fileStream.seekg(0, std::ios::beg);
+
+	// Get metadata from AIFF
+	Pomme::Sound::SampledSoundInfo info = {};
+	std::streampos sampledSoundDataOffset = GetSoundInfoFromAIFF(fileStream, info);
+
+	// Have file stream seek to start of SSND sampled sound data
+	if (sampledSoundDataOffset <= 0)
+		throw std::runtime_error("dubious offset to SSND data");
+	fileStream.seekg(sampledSoundDataOffset, std::ios::beg);
+
+	// Read samples into WavStream
+	if (!info.isCompressed)
+	{
+		// Raw big-endian PCM -- just init the WavStream without decoding
+		auto spanOut = impl.source.GetBuffer(info.decompressedLength);
+		fileStream.read(spanOut.data(), info.decompressedLength);
+		impl.source.Init(info.sampleRate, info.codecBitDepth, info.nChannels, info.bigEndian, spanOut);
+	}
+	else
+	{
+		auto ssnd = std::vector<char>(info.compressedLength);
+		fileStream.read(ssnd.data(), info.compressedLength);
+		auto codec   = Pomme::Sound::GetCodec(info.compressionType);
+		auto spanIn  = std::span(ssnd);
+		auto spanOut = impl.source.GetBuffer(info.decompressedLength);
+		codec->Decode(info.nChannels, spanIn, spanOut);
+		impl.source.Init(info.sampleRate, 16, info.nChannels, false, spanOut);
+	}
 
 	if (theCompletion)
 	{
@@ -541,7 +570,7 @@ OSErr SndStartFilePlay(
 OSErr SndPauseFilePlay(SndChannelPtr chan)
 {
 	// TODO: check that chan is being used for play from disk
-	GetImpl(chan).source.TogglePause();
+	GetChannelImpl(chan).source.TogglePause();
 	return noErr;
 }
 
@@ -550,7 +579,7 @@ OSErr SndStopFilePlay(SndChannelPtr chan, Boolean quietNow)
 	// TODO: check that chan is being used for play from disk
 	if (!quietNow)
 		TODO2("quietNow==false not supported yet, sound will be cut off immediately instead");
-	GetImpl(chan).source.Stop();
+	GetChannelImpl(chan).source.Stop();
 	return noErr;
 }
 

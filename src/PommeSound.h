@@ -14,8 +14,6 @@ namespace Pomme::Sound
 
 	void Shutdown();
 
-	void ReadAIFF(std::istream& input, cmixer::WavStream& output);
-
 	struct SampledSoundInfo
 	{
 		int16_t nChannels;
@@ -99,6 +97,8 @@ namespace Pomme::Sound
 	void GetSoundInfo(const Ptr sndhdr, SampledSoundInfo& info);
 
 	void GetSoundInfoFromSndResource(Handle sndHandle, SampledSoundInfo& info);
+
+	std::streampos GetSoundInfoFromAIFF(std::istream& input, SampledSoundInfo& info);
 
 	std::unique_ptr<Pomme::Sound::Codec> GetCodec(uint32_t fourCC);
 }

@@ -481,6 +481,9 @@ Boolean Pomme_DecompressSoundResource(SndListHandle* sndHandlePtr, long* offsetT
 // Pomme extension
 void Pomme_PauseAllChannels(Boolean pause);
 
+// Pomme extension
+SndListHandle Pomme_SndLoadFileAsResource(short fRefNum);
+
 #ifdef __cplusplus
 }
 #endif

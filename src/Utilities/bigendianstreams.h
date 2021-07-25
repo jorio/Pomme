@@ -37,7 +37,7 @@ namespace Pomme
 
 		std::vector<unsigned char> ReadBytes(size_t n);
 
-		std::string ReadPascalString();
+		std::string ReadPascalString(int padToAlignment = 1);
 
 		std::string ReadPascalString_FixedLengthRecord(const int maxChars);
 

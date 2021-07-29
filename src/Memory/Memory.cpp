@@ -1,5 +1,4 @@
 #include <iostream>
-#include <vector>
 #include <cstring>
 
 #include "Pomme.h"
@@ -10,30 +9,81 @@ using namespace Pomme::Memory;
 
 #define LOG POMME_GENLOG(POMME_DEBUG_MEMORY, "MEMO")
 
+#if POMME_PTR_TRACKING
+#include <set>
+static uint32_t gCurrentPtrBatch = 0;
+static uint32_t gCurrentNumPtrsInBatch = 0;
+static std::set<uint32_t> gLivePtrNums;
+#endif
+
+static constexpr int kBlockDescriptorPadding = 32;
+static_assert(sizeof(BlockDescriptor) <= kBlockDescriptorPadding);
+
 //-----------------------------------------------------------------------------
 // Implementation-specific stuff
 
-BlockDescriptor::BlockDescriptor(Size theSize)
+BlockDescriptor* BlockDescriptor::Allocate(uint32_t size)
 {
-	buf = new char[theSize];
-	magic = 'LIVE';
-	size = theSize;
+	char* buf = new char[kBlockDescriptorPadding + size];
+
+	BlockDescriptor* block = (BlockDescriptor*) buf;
+
+	block->magic = 'LIVE';
+	block->size = size;
+	block->ptrToData = buf + kBlockDescriptorPadding;
+	block->rezMeta = nullptr;
+
+#if POMME_PTR_TRACKING
+	block->ptrBatch = gCurrentPtrBatch;
+	block->ptrNumInBatch = gCurrentNumPtrsInBatch++;
+	gLivePtrNums.insert(block->ptrNumInBatch);
+#endif
+
+	return block;
 }
 
-BlockDescriptor::~BlockDescriptor()
+void BlockDescriptor::Free(BlockDescriptor* block)
 {
+	if (!block)
+		return;
+
+	block->magic = 'DEAD';
+	block->size = 0;
+	block->ptrToData = nullptr;
+	block->rezMeta = nullptr;
+#if POMME_PTR_TRACKING
+	if (block->ptrBatch == gCurrentPtrBatch)
+		gLivePtrNums.erase(block->ptrNumInBatch);
+#endif
+
+	char* buf = (char*) block;
 	delete[] buf;
-	buf = nullptr;
-	size = 0;
-	rezMeta = nullptr;
-	magic = 'DEAD';
+}
+
+void BlockDescriptor::CheckIsLive() const
+{
+	if (magic == 'DEAD')
+		throw std::runtime_error("ptr/handle double free?");
+
+	if (magic != 'LIVE')
+		throw std::runtime_error("corrupted ptr/handle");
 }
 
 BlockDescriptor* BlockDescriptor::HandleToBlock(Handle h)
 {
-	auto bd = (BlockDescriptor*) h;
-	if (bd->magic != 'LIVE')
-		throw std::runtime_error("corrupted handle");
+	if (!h || !*h)
+		return nullptr;
+	BlockDescriptor* bd = (BlockDescriptor*) (*h - kBlockDescriptorPadding);
+	bd->CheckIsLive();
+	return bd;
+}
+
+BlockDescriptor* BlockDescriptor::PtrToBlock(Ptr p)
+{
+	if (!p)
+		return nullptr;
+	BlockDescriptor* bd = (BlockDescriptor*) (p - kBlockDescriptorPadding);
+	bd->CheckIsLive();
 	return bd;
 }
 
@@ -44,13 +94,11 @@ Handle NewHandle(Size size)
 {
 	if (size < 0)
 		throw std::invalid_argument("trying to alloc negative size handle");
+	if (size > 0x7FFFFFFF)
+		throw std::invalid_argument("trying to alloc massive handle");
 
-	BlockDescriptor* block = new BlockDescriptor(size);
-
-	if ((Ptr) &block->buf != (Ptr) block)
-		throw std::runtime_error("buffer address mismatches block address");
-
-	return &block->buf;
+	BlockDescriptor* block = BlockDescriptor::Allocate(size);
+	return &block->ptrToData;
 }
 
 Handle NewHandleClear(Size s)
@@ -89,7 +137,7 @@ void SetHandleSize(Handle handle, Size byteCount)
 
 void DisposeHandle(Handle h)
 {
-	delete BlockDescriptor::HandleToBlock(h);
+	BlockDescriptor::Free(BlockDescriptor::HandleToBlock(h));
 }
 
 OSErr PtrToHand(const void* srcPtr, Handle* dstHndl, Size size)
@@ -117,27 +165,56 @@ OSErr PtrToHand(const void* srcPtr, Handle* dstHndl, Size size)
 
 Ptr NewPtr(Size byteCount)
 {
-	if (byteCount < 0) throw std::invalid_argument("trying to NewPtr negative size");
+	if (byteCount < 0)
+		throw std::invalid_argument("trying to NewPtr negative size");
+	if (byteCount > 0x7FFFFFFF)
+		throw std::invalid_argument("trying to alloc massive ptr");
+
+#if !POMME_PTR_TRACKING
 	return new char[byteCount];
+#else
+	BlockDescriptor* bd = BlockDescriptor::Allocate(byteCount);
+	return bd->ptrToData;
+#endif
 }
 
 Ptr NewPtrSys(Size byteCount)
 {
-	if (byteCount < 0) throw std::invalid_argument("trying to NewPtrSys negative size");
-	return new char[byteCount];
+	return NewPtr(byteCount);
 }
 
 Ptr NewPtrClear(Size byteCount)
 {
-	if (byteCount < 0) throw std::invalid_argument("trying to NewPtrClear negative size");
-	Ptr ptr = new char[byteCount];
+	Ptr ptr = NewPtr(byteCount);
 	memset(ptr, 0, byteCount);
 	return ptr;
 }
 
 void DisposePtr(Ptr p)
 {
+#if !POMME_PTR_TRACKING
 	delete[] p;
+#else
+	BlockDescriptor::Free(BlockDescriptor::PtrToBlock(p));
+#endif
+}
+
+//-----------------------------------------------------------------------------
+// Memory: pointer tracking
+
+void Pomme_FlushPtrTracking(bool issueWarnings)
+{
+#if POMME_PTR_TRACKING
+	if (issueWarnings && !gLivePtrNums.empty())
+	{
+		for (uint32_t ptrNum : gLivePtrNums)
+			printf("%s: ptr/handle %d:%d is still live!\n", __func__, gCurrentPtrBatch, ptrNum);
+	}
+
+	gLivePtrNums.clear();
+	gCurrentPtrBatch++;
+	gCurrentNumPtrsInBatch = 0;
+#endif
 }
 
 //-----------------------------------------------------------------------------

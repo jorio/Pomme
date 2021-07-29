@@ -420,6 +420,11 @@ Ptr NewPtrClear(Size);
 void DisposePtr(Ptr p);
 
 //-----------------------------------------------------------------------------
+// Memory: pointer tracking
+
+void Pomme_FlushPtrTracking(bool issueWarnings);
+
+//-----------------------------------------------------------------------------
 // Memory: BlockMove
 
 // Copies a sequence of bytes from one location in memory to another

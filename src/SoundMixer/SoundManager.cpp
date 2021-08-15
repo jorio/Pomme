@@ -122,7 +122,6 @@ static void InstallSoundInChannel(SndChannelPtr chan, const Ptr sampledSoundHead
 	//---------------------------------
 	// Get internal channel
 
-
 	auto& impl = GetChannelImpl(chan);
 	impl.Recycle();
 
@@ -203,6 +202,7 @@ OSErr SndDoImmediate(SndChannelPtr chan, const SndCommand* cmd)
 	case bufferCmd:
 	case soundCmd:
 		InstallSoundInChannel(chan, cmd->ptr);
+		GetChannelImpl(chan).source.Play();
 		break;
 
 	case ampCmd:
@@ -302,48 +302,16 @@ OSErr SndStartFilePlay(
 		return unimpErr;
 	}
 
+	SndListHandle sndListHandle = Pomme_SndLoadFileAsResource(fRefNum);
+	long offset = 0;
+	GetSoundHeaderOffset(sndListHandle, &offset);
+	InstallSoundInChannel(chan, ((Ptr) *sndListHandle) + offset);
+
 	auto& impl = GetChannelImpl(chan);
-	impl.Recycle();
-
-	auto& fileStream = Pomme::Files::GetStream(fRefNum);
-
-	// Rewind -- the file might've been fully played already and we might just be trying to loop it
-	fileStream.seekg(0, std::ios::beg);
-
-	// Get metadata from AIFF
-	Pomme::Sound::SampledSoundInfo info = {};
-	std::streampos sampledSoundDataOffset = GetSoundInfoFromAIFF(fileStream, info);
-
-	// Have file stream seek to start of SSND sampled sound data
-	if (sampledSoundDataOffset <= 0)
-		throw std::runtime_error("dubious offset to SSND data");
-	fileStream.seekg(sampledSoundDataOffset, std::ios::beg);
-
-	// Read samples into WavStream
-	if (!info.isCompressed)
-	{
-		// Raw big-endian PCM -- just init the WavStream without decoding
-		auto spanOut = impl.source.GetBuffer(info.decompressedLength);
-		fileStream.read(spanOut.data(), info.decompressedLength);
-		impl.source.Init(info.sampleRate, info.codecBitDepth, info.nChannels, info.bigEndian, spanOut);
-	}
-	else
-	{
-		auto ssnd = std::vector<char>(info.compressedLength);
-		fileStream.read(ssnd.data(), info.compressedLength);
-		auto codec   = Pomme::Sound::GetCodec(info.compressionType);
-		auto spanIn  = std::span(ssnd);
-		auto spanOut = impl.source.GetBuffer(info.decompressedLength);
-		codec->Decode(info.nChannels, spanIn, spanOut);
-		impl.source.Init(info.sampleRate, 16, info.nChannels, false, spanOut);
-	}
-
 	if (theCompletion)
 	{
 		impl.source.onComplete = [=]() { theCompletion(chan); };
 	}
-
-	impl.temporaryPause = false;
 	impl.source.Play();
 
 	if (!async)

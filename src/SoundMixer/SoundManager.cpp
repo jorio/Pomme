@@ -1,7 +1,8 @@
 #include "Pomme.h"
 #include "PommeFiles.h"
-#include "cmixer.h"
 #include "PommeSound.h"
+#include "SoundMixer/ChannelImpl.h"
+#include "SoundMixer/cmixer.h"
 #include "Utilities/bigendianstreams.h"
 #include "Utilities/IEEEExtended.h"
 #include "Utilities/memstream.h"
@@ -15,184 +16,14 @@
 #define LOG POMME_GENLOG(POMME_DEBUG_SOUND, "SOUN")
 #define LOG_NOPREFIX POMME_GENLOG_NOPREFIX(POMME_DEBUG_SOUND)
 
-static struct ChannelImpl* headChan = nullptr;
-static int nManagedChans = 0;
-static double midiNoteFrequencies[128];
-
 //-----------------------------------------------------------------------------
 // Internal channel info
 
-enum ApplyParametersMask
+namespace Pomme::Sound
 {
-	kApplyParameters_PanAndGain		= 1 << 0,
-	kApplyParameters_Pitch			= 1 << 1,
-	kApplyParameters_Loop			= 1 << 2,
-	kApplyParameters_Interpolation	= 1 << 3,
-	kApplyParameters_All            = 0xFFFFFFFF
-};
-
-struct ChannelImpl
-{
-private:
-	ChannelImpl* prev;
-	ChannelImpl* next;
-
-public:
-	// Pointer to application-facing interface
-	SndChannelPtr macChannel;
-
-	bool macChannelStructAllocatedByPomme;
-	cmixer::WavStream source;
-
-	// Parameters coming from Mac sound commands, passed back to cmixer source
-	double pan;
-	double gain;
-	Byte baseNote;
-	Byte playbackNote;
-	double pitchMult;
-	bool loop;
-	bool interpolate;
-
-	bool temporaryPause = false;
-
-	ChannelImpl(SndChannelPtr _macChannel, bool transferMacChannelOwnership)
-		: macChannel(_macChannel)
-		, macChannelStructAllocatedByPomme(transferMacChannelOwnership)
-		, source()
-		, pan(0.0)
-		, gain(1.0)
-		, baseNote(kMiddleC)
-		, playbackNote(kMiddleC)
-		, pitchMult(1.0)
-		, loop(false)
-		, interpolate(false)
-	{
-		macChannel->channelImpl = (Ptr) this;
-
-		Link();  // Link chan into our list of managed chans
-	}
-
-	~ChannelImpl()
-	{
-		Unlink();
-
-		macChannel->channelImpl = nullptr;
-
-		if (macChannelStructAllocatedByPomme)
-		{
-			delete macChannel;
-		}
-	}
-
-	void Recycle()
-	{
-		source.Clear();
-	}
-
-	void SetInitializationParameters(long initBits)
-	{
-		interpolate = !(initBits & initNoInterp);
-		source.SetInterpolation(interpolate);
-	}
-
-	void ApplyParametersToSource(uint32_t mask, bool evenIfInactive = false)
-	{
-		if (!evenIfInactive && !source.active)
-		{
-			return;
-		}
-
-		// Pitch
-		if (mask & kApplyParameters_Pitch)
-		{
-			double baseFreq = midiNoteFrequencies[baseNote];
-			double playbackFreq = midiNoteFrequencies[playbackNote];
-			source.SetPitch(pitchMult * playbackFreq / baseFreq);
-		}
-
-		// Pan and gain
-		if (mask & kApplyParameters_PanAndGain)
-		{
-			source.SetPan(pan);
-			source.SetGain(gain);
-		}
-
-		// Interpolation
-		if (mask & kApplyParameters_Interpolation)
-		{
-			source.SetInterpolation(interpolate);
-		}
-
-		// Interpolation
-		if (mask & kApplyParameters_Loop)
-		{
-			source.SetLoop(loop);
-		}
-	}
-
-	ChannelImpl* GetPrev() const
-	{
-		return prev;
-	}
-
-	ChannelImpl* GetNext() const
-	{
-		return next;
-	}
-
-	void SetPrev(ChannelImpl* newPrev)
-	{
-		prev = newPrev;
-	}
-
-	void SetNext(ChannelImpl* newNext)
-	{
-		next = newNext;
-		macChannel->nextChan = newNext ? newNext->macChannel : nullptr;
-	}
-
-	void Link()
-	{
-		if (!headChan)
-		{
-			SetNext(nullptr);
-		}
-		else
-		{
-			assert(nullptr == headChan->GetPrev());
-			headChan->SetPrev(this);
-			SetNext(headChan);
-		}
-
-		headChan = this;
-		SetPrev(nullptr);
-
-		nManagedChans++;
-	}
-
-	void Unlink()
-	{
-		if (headChan == this)
-		{
-			headChan = GetNext();
-		}
-
-		if (nullptr != GetPrev())
-		{
-			GetPrev()->SetNext(GetNext());
-		}
-
-		if (nullptr != GetNext())
-		{
-			GetNext()->SetPrev(GetPrev());
-		}
-
-		SetPrev(nullptr);
-		SetNext(nullptr);
-
-		nManagedChans--;
-	}
-};
+	struct ChannelImpl* gHeadChan = nullptr;
+	int gNumManagedChans = 0;
+}
 
 //-----------------------------------------------------------------------------
 // Internal utilities
@@ -200,47 +31,6 @@ public:
 static inline ChannelImpl& GetChannelImpl(SndChannelPtr chan)
 {
 	return *(ChannelImpl*) chan->channelImpl;
-}
-
-//-----------------------------------------------------------------------------
-// MIDI note utilities
-
-// Note: these names are according to IM:S:2-43.
-// These names won't match real-world names.
-// E.g. for note 67 (A 440Hz), this will return "A6", whereas the real-world
-// convention for that note is "A4".
-static std::string GetMidiNoteName(int i)
-{
-	static const char* gamme[12] = {"A", "A#", "B", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#"};
-
-	int octave = 1 + (i + 3) / 12;
-	int semitonesFromA = (i + 3) % 12;
-
-	std::stringstream ss;
-	ss << gamme[semitonesFromA] << octave;
-	return ss.str();
-}
-
-static void InitMidiFrequencyTable()
-{
-	// powers of twelfth root of two
-	double gamme[12];
-	gamme[0] = 1.0;
-	for (int i = 1; i < 12; i++)
-	{
-		gamme[i] = gamme[i - 1] * 1.059630943592952646;
-	}
-
-	for (int i = 0; i < 128; i++)
-	{
-		int octave = 1 + (i + 3) / 12; // A440 and middle C are in octave 7
-		int semitone = (i + 3) % 12; // halfsteps up from A in current octave
-		if (octave < 7)
-			midiNoteFrequencies[i] = gamme[semitone] * 440.0 / (1 << (7 - octave)); // 440/(2**octaveDiff)
-		else
-			midiNoteFrequencies[i] = gamme[semitone] * 440.0 * (1 << (octave - 7)); // 440*(2**octaveDiff)
-		//LOG << i << "\t" << GetMidiNoteName(i) << "\t" << midiNoteFrequencies[i] << "\n";
-	}
 }
 
 //-----------------------------------------------------------------------------
@@ -297,7 +87,8 @@ OSErr SndNewChannel(SndChannelPtr* macChanPtr, short synth, long init, SndCallBa
 	//---------------------------
 	// Done
 
-	LOG << "New channel created, init = $" << std::hex << init << std::dec << ", total managed channels = " << nManagedChans << "\n";
+	LOG << "New channel created, init = $" << std::hex << init << std::dec
+		<< ", total managed channels = " << Pomme::Sound::gNumManagedChans << "\n";
 
 	return noErr;
 }
@@ -440,7 +231,8 @@ OSErr SndDoImmediate(SndChannelPtr chan, const SndCommand* cmd)
 	}
 
 	case freqCmd:
-		LOG << "freqCmd " << cmd->param2 << " " << GetMidiNoteName(cmd->param2) << " " << midiNoteFrequencies[cmd->param2] << "\n";
+		LOG << "freqCmd " << cmd->param2 << " "
+			<< Pomme::Sound::GetMidiNoteName(cmd->param2) << " " << Pomme::Sound::GetMidiNoteFrequency(cmd->param2) << "\n";
 		impl.playbackNote = Byte(cmd->param2);
 		impl.ApplyParametersToSource(kApplyParameters_Pitch);
 		break;
@@ -598,7 +390,7 @@ NumVersion SndSoundManagerVersion()
 
 void Pomme_PauseAllChannels(Boolean pause)
 {
-	for (auto* chan = headChan; chan; chan = chan->GetNext())
+	for (auto* chan = Pomme::Sound::gHeadChan; chan; chan = chan->GetNext())
 	{
 		auto& source = chan->source;
 		if (pause && source.state == cmixer::CM_STATE_PLAYING && !chan->temporaryPause)
@@ -617,17 +409,16 @@ void Pomme_PauseAllChannels(Boolean pause)
 //-----------------------------------------------------------------------------
 // Init Sound Manager
 
-void Pomme::Sound::Init()
+void Pomme::Sound::InitMixer()
 {
-	InitMidiFrequencyTable();
 	cmixer::InitWithSDL();
 }
 
-void Pomme::Sound::Shutdown()
+void Pomme::Sound::ShutdownMixer()
 {
 	cmixer::ShutdownWithSDL();
-	while (headChan)
+	while (Pomme::Sound::gHeadChan)
 	{
-		SndDisposeChannel(headChan->macChannel, true);
+		SndDisposeChannel(Pomme::Sound::gHeadChan->macChannel, true);
 	}
 }

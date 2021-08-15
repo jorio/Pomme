@@ -41,26 +41,29 @@ set(POMME_SOURCES
 	$<$<BOOL:${WIN32}>:${POMME_SRCDIR}/Platform/Windows/PommeWindows.h>
 )
 
-if (NOT(POMME_NO_SOUND))
+if (NOT(POMME_NO_SOUND_FORMATS))
 	list(APPEND POMME_SOURCES
-		${POMME_SRCDIR}/Sound/AIFF.cpp
-		${POMME_SRCDIR}/Sound/IMA4.cpp
-		${POMME_SRCDIR}/Sound/MACE.cpp
-		${POMME_SRCDIR}/Sound/SoundUtilities.cpp
-		${POMME_SRCDIR}/Sound/xlaw.cpp
+		${POMME_SRCDIR}/SoundFormats/AIFF.cpp
+		${POMME_SRCDIR}/SoundFormats/IMA4.cpp
+		${POMME_SRCDIR}/SoundFormats/MACE.cpp
+		${POMME_SRCDIR}/SoundFormats/Midi.cpp
+		${POMME_SRCDIR}/SoundFormats/SoundFormats.cpp
+		${POMME_SRCDIR}/SoundFormats/xlaw.cpp
 	)
 else()
-	add_compile_definitions(POMME_NO_SOUND)
+	add_compile_definitions(POMME_NO_SOUND_FORMATS)
 endif()
 
-if (NOT(POMME_NO_SOUND_PLAYBACK))
+if (NOT(POMME_NO_SOUND_MIXER))
 	list(APPEND POMME_SOURCES
-		${POMME_SRCDIR}/Sound/cmixer.cpp
-		${POMME_SRCDIR}/Sound/cmixer.h
-		${POMME_SRCDIR}/Sound/SoundManager.cpp
-		)
+		${POMME_SRCDIR}/SoundMixer/ChannelImpl.cpp
+		${POMME_SRCDIR}/SoundMixer/ChannelImpl.h
+		${POMME_SRCDIR}/SoundMixer/cmixer.cpp
+		${POMME_SRCDIR}/SoundMixer/cmixer.h
+		${POMME_SRCDIR}/SoundMixer/SoundManager.cpp
+	)
 else()
-	add_compile_definitions(POMME_NO_SOUND_PLAYBACK)
+	add_compile_definitions(POMME_NO_SOUND_MIXER)
 endif()
 
 if (NOT(POMME_NO_GRAPHICS))

@@ -53,8 +53,12 @@ void Pomme::Init()
 	Pomme::Graphics::Init();
 #endif
 
-#ifndef POMME_NO_SOUND_PLAYBACK
-	Pomme::Sound::Init();
+#ifndef POMME_NO_SOUND_FORMATS
+	Pomme::Sound::InitMidiFrequencyTable();
+#endif
+
+#ifndef POMME_NO_SOUND_MIXER
+	Pomme::Sound::InitMixer();
 #endif
 
 #ifndef POMME_NO_INPUT
@@ -64,7 +68,7 @@ void Pomme::Init()
 
 void Pomme::Shutdown()
 {
-#ifndef POMME_NO_SOUND_PLAYBACK
-	Pomme::Sound::Shutdown();
+#ifndef POMME_NO_SOUND_MIXER
+	Pomme::Sound::ShutdownMixer();
 #endif
 }

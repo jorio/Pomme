@@ -6,13 +6,16 @@
 #include <istream>
 #include <ostream>
 #include <memory>
-#include "Sound/cmixer.h"
 
 namespace Pomme::Sound
 {
-	void Init();
+	void InitMidiFrequencyTable();
 
-	void Shutdown();
+	void InitMixer();
+	void ShutdownMixer();
+
+	double GetMidiNoteFrequency(int note);
+	std::string GetMidiNoteName(int note);
 
 	struct SampledSoundInfo
 	{

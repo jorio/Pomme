@@ -105,17 +105,21 @@ void Pomme::BigEndianOStream::Write(const char* src, size_t n)
 
 void Pomme::BigEndianOStream::WritePascalString(const std::string& text, int padToAlignment)
 {
-	int length = text.length();
+	size_t length = text.length();
 	if (length > 255)
 	{
 		throw std::out_of_range("WritePascalString: must be <255 characters!");
 	}
-	Write<uint8_t>(length);
+
+	Write<uint8_t>((uint8_t) length);
 	Write(text.data(), length);
 
-	int padding = (length + 1) % padToAlignment;
-	for (int i = 0; i < padding; i++)
+	size_t padding = (length + 1) % padToAlignment;
+	while (padding > 0)
+	{
 		Write<uint8_t>(0);
+		padding--;
+	}
 }
 
 void Pomme::BigEndianOStream::WriteRawString(const std::string& text)

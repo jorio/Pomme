@@ -21,11 +21,11 @@ using namespace Pomme::Files;
 //-----------------------------------------------------------------------------
 // State
 
-static OSErr lastResError = noErr;
+static OSErr gLastResError = noErr;
 
-static std::vector<ResourceFork> rezSearchStack;
+static std::vector<ResourceFork> gResForkStack;
 
-static int rezSearchStackIndex = 0;
+static int gResForkStackIndex = 0;
 
 //-----------------------------------------------------------------------------
 // Internal
@@ -40,7 +40,7 @@ static void ResourceAssert(bool condition, const char* message)
 
 static ResourceFork& GetCurRF()
 {
-	return rezSearchStack[rezSearchStackIndex];
+	return gResForkStack[gResForkStackIndex];
 }
 
 //-----------------------------------------------------------------------------
@@ -48,16 +48,16 @@ static ResourceFork& GetCurRF()
 
 OSErr ResError(void)
 {
-	return lastResError;
+	return gLastResError;
 }
 
 short FSpOpenResFile(const FSSpec* spec, char permission)
 {
 	short slot;
 
-	lastResError = FSpOpenRF(spec, permission, &slot);
+	gLastResError = FSpOpenRF(spec, permission, &slot);
 
-	if (noErr != lastResError)
+	if (noErr != gLastResError)
 	{
 		return -1;
 	}
@@ -68,8 +68,8 @@ short FSpOpenResFile(const FSSpec* spec, char permission)
 	// ----------------
 	// Load resource fork
 
-	rezSearchStack.emplace_back();
-	rezSearchStackIndex = int(rezSearchStack.size() - 1);
+	gResForkStack.emplace_back();
+	gResForkStackIndex = int(gResForkStack.size() - 1);
 	GetCurRF().fileRefNum = slot;
 	GetCurRF().resourceMap.clear();
 
@@ -161,24 +161,24 @@ void UseResFile(short refNum)
 {
 	// See MoreMacintoshToolbox:1-69
 
-	lastResError = unimpErr;
+	gLastResError = unimpErr;
 
 	ResourceAssert(refNum != 0, "UseResFile: Using the System file's resource fork is not implemented.");
 	ResourceAssert(refNum >= 0, "UseResFile: Illegal refNum");
 	ResourceAssert(IsStreamOpen(refNum), "UseResFile: Resource stream not open");
 
-	for (size_t i = 0; i < rezSearchStack.size(); i++)
+	for (size_t i = 0; i < gResForkStack.size(); i++)
 	{
-		if (rezSearchStack[i].fileRefNum == refNum)
+		if (gResForkStack[i].fileRefNum == refNum)
 		{
-			lastResError = noErr;
-			rezSearchStackIndex = i;
+			gLastResError = noErr;
+			gResForkStackIndex = (int) i;
 			return;
 		}
 	}
 
 	std::cerr << "no RF open with refNum " << rfNumErr << "\n";
-	lastResError = rfNumErr;
+	gLastResError = rfNumErr;
 }
 
 short CurResFile()
@@ -195,21 +195,21 @@ void CloseResFile(short refNum)
 	//UpdateResFile(refNum); // MMT:1-110
 	Pomme::Files::CloseStream(refNum);
 
-	auto it = rezSearchStack.begin();
-	while (it != rezSearchStack.end())
+	auto it = gResForkStack.begin();
+	while (it != gResForkStack.end())
 	{
 		if (it->fileRefNum == refNum)
-			it = rezSearchStack.erase(it);
+			it = gResForkStack.erase(it);
 		else
 			it++;
 	}
 
-	rezSearchStackIndex = std::min(rezSearchStackIndex, (int) rezSearchStack.size() - 1);
+	gResForkStackIndex = std::min(gResForkStackIndex, (int) gResForkStack.size() - 1);
 }
 
 short Count1Resources(ResType theType)
 {
-	lastResError = noErr;
+	gLastResError = noErr;
 
 	try
 	{
@@ -246,11 +246,11 @@ void Get1IndType(ResType* theType, short index)
 
 Handle GetResource(ResType theType, short theID)
 {
-	lastResError = noErr;
+	gLastResError = noErr;
 
-	for (int i = rezSearchStackIndex; i >= 0; i--)
+	for (int i = gResForkStackIndex; i >= 0; i--)
 	{
-		const auto& fork = rezSearchStack[i];
+		const auto& fork = gResForkStack[i];
 
 		if (fork.resourceMap.end() == fork.resourceMap.find(theType))
 			continue;
@@ -261,7 +261,7 @@ Handle GetResource(ResType theType, short theID)
 
 		// Found it!
 		const auto& meta = fork.resourceMap.at(theType).at(theID);
-		auto& forkStream = Pomme::Files::GetStream(rezSearchStack[i].fileRefNum);
+		auto& forkStream = Pomme::Files::GetStream(gResForkStack[i].fileRefNum);
 
 		// Allocate handle
 		Handle handle = NewHandle(meta.size);
@@ -275,13 +275,13 @@ Handle GetResource(ResType theType, short theID)
 		return handle;
 	}
 
-	lastResError = resNotFound;
+	gLastResError = resNotFound;
 	return nil;
 }
 
 Handle Get1IndResource(ResType theType, short index)
 {
-	lastResError = noErr;
+	gLastResError = noErr;
 
 	const auto& idsToResources = GetCurRF().resourceMap.at(theType);
 
@@ -295,17 +295,17 @@ Handle Get1IndResource(ResType theType, short index)
 		index--;
 	}
 
-	lastResError = resNotFound;
+	gLastResError = resNotFound;
 	return nullptr;
 }
 
 void GetResInfo(Handle theResource, short* theID, ResType* theType, char* name256)
 {
-	lastResError = noErr;
+	gLastResError = noErr;
 
 	if (!theResource)
 	{
-		lastResError = resNotFound;
+		gLastResError = resNotFound;
 		return;
 	}
 
@@ -313,7 +313,7 @@ void GetResInfo(Handle theResource, short* theID, ResType* theType, char* name25
 
 	if (!blockDescriptor->rezMeta)
 	{
-		lastResError = resNotFound;
+		gLastResError = resNotFound;
 		return;
 	}
 
@@ -355,12 +355,12 @@ void WriteResource(Handle theResource)
 
 void DetachResource(Handle theResource)
 {
-	lastResError = noErr;
+	gLastResError = noErr;
 
 	auto* blockDescriptor = Pomme::Memory::BlockDescriptor::HandleToBlock(theResource);
 
 	if (!blockDescriptor->rezMeta)
-		lastResError = resNotFound;
+		gLastResError = resNotFound;
 
 	blockDescriptor->rezMeta = nullptr;
 }

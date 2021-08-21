@@ -48,7 +48,7 @@ void ChannelImpl::SetInitializationParameters(long initBits)
 	source.SetInterpolation(interpolate);
 }
 
-void ChannelImpl::ApplyParametersToSource(uint32_t mask, bool evenIfInactive)
+void ChannelImpl::ApplyParametersToSource(int mask, bool evenIfInactive)
 {
 	if (!evenIfInactive && !source.active)
 	{

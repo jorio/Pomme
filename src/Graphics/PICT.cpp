@@ -189,10 +189,14 @@ static ARGBPixmap Unpack3(BigEndianIStream& f, int w, int h, UInt16 rowbytes)
 	LOG << "Chunky16 to RGBA";
 	for (UInt16 px : unpacked)
 	{
+		UInt8 r = ((px >> 10) & 0b11111) * 255 / 31;
+		UInt8 g = ((px >>  5) & 0b11111) * 255 / 31;
+		UInt8 b = ((px >>  0) & 0b11111) * 255 / 31;
+
 		dst.data.push_back(0xFF); // a
-		dst.data.push_back(((px >> 10) & 0x1F) << 3); // r
-		dst.data.push_back(((px >>  5) & 0x1F) << 3); // g
-		dst.data.push_back(((px >>  0) & 0x1F) << 3); // b
+		dst.data.push_back(r);
+		dst.data.push_back(g);
+		dst.data.push_back(b);
 	}
 	LOG_NOPREFIX << "\n";
 	return dst;

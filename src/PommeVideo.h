@@ -1,7 +1,7 @@
 #pragma once
 
 #include "PommeTypes.h"
-#include "Sound/cmixer.h"
+#include "SoundMixer/cmixer.h"
 
 #include <istream>
 #include <queue>

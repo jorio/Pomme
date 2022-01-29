@@ -16,7 +16,15 @@
 
 #define __fres(x) (1.0f/x)
 #define __fabs(x) fabs(x)
+#if defined(__aarch64__)
+#include <arm_neon.h>
+static inline float __frsqrte(float f)
+{
+    return vrsqrteq_f32(vdupq_n_f32(f))[0];
+}
+#else
 #define __frsqrte(x) (1.0f/sqrtf(x))
+#endif
 
 //-----------------------------------------------------------------------------
 // Source code compat

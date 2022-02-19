@@ -117,13 +117,13 @@ OSErr HostVolume::OpenFork(const FSSpec* spec, ForkType forkType, char permissio
 {
 	if (permission == fsCurPerm)
 	{
-		TODO2("fsCurPerm not implemented yet");
+		// TODO: fsCurPerm not implemented yet
 		return unimpErr;
 	}
 
 	if ((permission & fsWrPerm) && forkType != ForkType::DataFork)
 	{
-		TODO2("opening resource fork for writing isn't implemented yet");
+		// TODO: opening resource fork for writing isn't implemented yet
 		return unimpErr;
 	}
 
@@ -146,7 +146,16 @@ OSErr HostVolume::OpenFork(const FSSpec* spec, ForkType forkType, char permissio
 			return fnfErr;
 		}
 		handle = std::make_unique<HostForkHandle>(ResourceFork, permission, path, *spec);
+		if (!handle->GetStream().good())
+		{
+			return ioErr;
+		}
 		ADFJumpToResourceFork(handle->GetStream());
+	}
+
+	if (!handle->GetStream().good())
+	{
+		return ioErr;
 	}
 
 	return noErr;

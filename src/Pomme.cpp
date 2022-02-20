@@ -30,6 +30,8 @@ void ExitToShell()
 
 void SysBeep(short duration)
 {
+	(void) duration;
+
 #ifdef _WIN32
 	Pomme::Platform::Windows::SysBeep();
 #else

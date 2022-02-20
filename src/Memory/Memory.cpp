@@ -132,6 +132,8 @@ Size GetHandleSize(Handle h)
 
 void SetHandleSize(Handle handle, Size byteCount)
 {
+	(void) handle;
+	(void) byteCount;
 	TODOFATAL();
 }
 
@@ -214,6 +216,8 @@ void Pomme_FlushPtrTracking(bool issueWarnings)
 	gLivePtrNums.clear();
 	gCurrentPtrBatch++;
 	gCurrentNumPtrsInBatch = 0;
+#else
+	(void) issueWarnings;
 #endif
 }
 
@@ -227,5 +231,8 @@ void BlockMove(const void* srcPtr, void* destPtr, Size byteCount)
 
 void BlockMoveData(const void* srcPtr, void* destPtr, Size byteCount)
 {
+	(void) srcPtr;
+	(void) destPtr;
+	(void) byteCount;
 	TODOFATAL();
 }

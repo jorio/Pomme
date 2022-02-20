@@ -352,6 +352,8 @@ OSErr GetEOF(short refNum, long* logEOF)
 
 OSErr SetEOF(short refNum, long logEOF)
 {
+	(void) refNum;
+	(void) logEOF;
 	TODO();
 	return unimpErr;
 }

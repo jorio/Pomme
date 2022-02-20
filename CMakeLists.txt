@@ -141,8 +141,7 @@ if(MSVC)
 		/EHs	# synchronous exceptions; also, extern "C" functions may throw exceptions
 		/W4
 		/wd4068 # ignore unrecognized pragmas
-		/wd4100	# unreferenced formal parameter
-		/wd4201 # nonstandard extension
+		/wd4201 # nonstandard extension (nameless struct)
 		/wd4244 # conversion from double to float
 		/wd4458 # declaration of variable hides class member
 		/MP		# multiprocessor compilation
@@ -153,7 +152,6 @@ else()
 		-Wextra
 		-Wshadow
 		-Wno-multichar
-		-Wno-unused-parameter
 		-Wno-unknown-pragmas
 		-fexceptions
 	)

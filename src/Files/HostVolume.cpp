@@ -303,6 +303,10 @@ OSErr HostVolume::DirCreate(long parentDirID, const std::string& directoryName, 
 
 OSErr HostVolume::FSpCreate(const FSSpec* spec, OSType creator, OSType fileType, ScriptCode scriptTag)
 {
+	(void) creator;
+	(void) fileType;
+	(void) scriptTag;
+
 	std::ofstream df(ToPath(spec->parID, spec->cName));
 	df.close();
 	// TODO: we could write an AppleDouble file to save the creator/filetype.

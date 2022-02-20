@@ -65,6 +65,8 @@ void Pomme::Sound::xlaw::Decode(
 	const std::span<const char> input,
 	const std::span<char> output)
 {
+	(void) nChannels;
+
 	if (2 * input.size() != output.size())
 	{
 		throw std::runtime_error("ulaw: incorrect input/output buffer sizes");

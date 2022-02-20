@@ -213,6 +213,11 @@ static inline ARGBPixmap& GetImpl(PixMapPtr pixMap)
 
 OSErr NewGWorld(GWorldPtr* offscreenGWorld, short pixelDepth, const Rect* boundsRect, void* junk1, void* junk2, long junk3)
 {
+	(void) pixelDepth;
+	(void) junk1;
+	(void) junk2;
+	(void) junk3;
+
 	GrafPortImpl* impl = new GrafPortImpl(*boundsRect);
 	*offscreenGWorld = &impl->port;
 	return noErr;
@@ -231,6 +236,7 @@ void GetGWorld(CGrafPtr* port, GDHandle* gdh)
 
 void SetGWorld(CGrafPtr port, GDHandle gdh)
 {
+	(void) gdh;
 	SetPort(port);
 }
 
@@ -361,6 +367,8 @@ void PenNormal(void)
 
 void PenSize(short width, short height)
 {
+	(void) width;
+	(void) height;
 	TODOMINOR();
 }
 
@@ -462,6 +470,10 @@ void FrameRect(const Rect* r)
 
 void FrameArc(const Rect* r, short startAngle, short arcAngle)
 {
+	(void) r;
+	(void) startAngle;
+	(void) arcAngle;
+
 	TODOMINOR();
 }
 
@@ -508,7 +520,7 @@ void DrawPicture(PicHandle myPicture, const Rect* dstRect)
 
 	if (srcWidth != dstWidth || srcHeight != dstHeight)
 		TODOFATAL2("we only support dstRect with the same width/height as the source picture");
-	
+
 	for (int y = 0; y < dstHeight; y++)
 	{
 		memcpy(
@@ -529,6 +541,8 @@ void CopyBits(
 	void* maskRgn
 )
 {
+	(void) maskRgn;
+
 	auto& srcPM = GetImpl((PixMapPtr) srcBits);
 	auto& dstPM = GetImpl(dstBits);
 

@@ -106,6 +106,8 @@ OSErr SndDisposeChannel(SndChannelPtr macChanPtr, Boolean quietNow)
 
 OSErr SndChannelStatus(SndChannelPtr chan, short theLength, SCStatusPtr theStatus)
 {
+	(void) theLength;
+
 	*theStatus = {};
 
 	auto& source = GetChannelImpl(chan).source;
@@ -268,6 +270,9 @@ OSErr SndDoImmediate(SndChannelPtr chan, const SndCommand* cmd)
 // Not implemented yet, but you can probably use SndDoImmediateInstead.
 OSErr SndDoCommand(SndChannelPtr chan, const SndCommand* cmd, Boolean noWait)
 {
+	(void) chan;
+	(void) cmd;
+	(void) noWait;
 	TODOMINOR2("SndDoCommand isn't implemented yet, but you can probably use SndDoImmediate instead.");
 	return noErr;
 }
@@ -282,6 +287,9 @@ OSErr SndStartFilePlay(
 	FilePlayCompletionUPP				theCompletion,
 	Boolean								async)
 {
+	(void) bufferSize;
+	(void) theBuffer;
+
 	if (resNum != 0)
 	{
 		TODO2("playing snd resource not implemented yet, resource " << resNum);

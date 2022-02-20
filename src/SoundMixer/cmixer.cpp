@@ -92,6 +92,7 @@ void cmixer::InitWithSDL()
 	fmt.samples = 1024;
 	fmt.callback = [](void* udata, Uint8* stream, int size)
 	{
+		(void) udata;
 		gMixer.Process((int16_t*) stream, size / 2);
 	};
 
@@ -627,7 +628,7 @@ WavStream cmixer::LoadWAVFromFile(const char* path)
 	// Check header
 	if (memcmp(p, "RIFF", 4) || memcmp(p + 8, "WAVE", 4))
 		throw std::invalid_argument("bad wav header");
-	
+
 	// Find fmt subchunk
 	p = FindChunk(data, len, "fmt ", &sz);
 	if (!p)

@@ -340,16 +340,25 @@ void RemoveResource(Handle theResource)
 
 void AddResource(Handle theData, ResType theType, short theID, const char* name)
 {
+	(void) theData;
+	(void) theType;
+	(void) theID;
+	(void) name;
+
 	TODO();
 }
 
 void ChangedResource(Handle theResource)
 {
+	(void) theResource;
+
 	TODO();
 }
 
 void WriteResource(Handle theResource)
 {
+	(void) theResource;
+
 	TODO();
 }
 
@@ -367,6 +376,8 @@ void DetachResource(Handle theResource)
 
 long GetResourceSizeOnDisk(Handle theResource)
 {
+	(void) theResource;
+
 	TODO();
 	return -1;
 }

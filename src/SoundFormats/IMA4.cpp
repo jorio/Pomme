@@ -55,7 +55,7 @@ static inline int sign_extend(int val, unsigned bits)
 	return v.s >> shift;
 }
 
-static inline int adpcm_ima_qt_expand_nibble(ADPCMChannelStatus* c, int nibble, int shift)
+static inline int adpcm_ima_qt_expand_nibble(ADPCMChannelStatus* c, int nibble)
 {
 	int step_index;
 	int predictor;
@@ -122,9 +122,9 @@ update:
 		for (int m = 0; m < 32; m++)
 		{
 			int byte = (uint8_t) (*in++);
-			out[pos] = adpcm_ima_qt_expand_nibble(&cs, byte & 0x0F, 3);
+			out[pos] = adpcm_ima_qt_expand_nibble(&cs, byte & 0x0F);
 			pos += nChannels;
-			out[pos] = adpcm_ima_qt_expand_nibble(&cs, byte >> 4, 3);
+			out[pos] = adpcm_ima_qt_expand_nibble(&cs, byte >> 4);
 			pos += nChannels;
 		}
 	}

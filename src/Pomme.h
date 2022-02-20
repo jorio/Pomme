@@ -338,9 +338,6 @@ Boolean Button(void);
 //-----------------------------------------------------------------------------
 // Memory: No-op
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 // No-op in Pomme.
 static inline void MaxApplZone(void) {}
 
@@ -355,41 +352,39 @@ static inline Size CompactMem(Size size) { return size; }
 static inline Size CompactMemSys(Size size) { return size; }
 
 // No-op in Pomme.
-static inline void PurgeMem(Size size) {}
+static inline void PurgeMem(Size size) { (void) size; }
 
 // No-op in Pomme.
-static inline void PurgeMemSys(Size size) {}
+static inline void PurgeMemSys(Size size) { (void) size; }
 
 // No-op in Pomme.
 // TODO: do something about `grow` and return a large integer to make it look like we have tons of memory.
-static inline Size MaxMem(Size* grow) { return 0; }
+static inline Size MaxMem(Size* grow) { (void) grow; return 0; }
 
 // No-op in Pomme.
-static inline void HNoPurge(Handle handle) {}	// no-op
+static inline void HNoPurge(Handle handle) { (void) handle; }	// no-op
 
 // No-op in Pomme.
-static inline void HLock(Handle handle) {}	// no-op
+static inline void HLock(Handle handle) { (void) handle; }	// no-op
 
 // No-op in Pomme.
-static inline void HLockHi(Handle handle) {}	// no-op
+static inline void HLockHi(Handle handle) { (void) handle; }	// no-op
 
 // No-op in Pomme.
-static inline void HUnlock(Handle handle) {}	// no-op
+static inline void HUnlock(Handle handle) { (void) handle; }	// no-op
 
 // No-op in Pomme.
-static inline void NoPurgePixels(PixMapHandle handle) {}	// no-op
+static inline void NoPurgePixels(PixMapHandle handle) { (void) handle; }	// no-op
 
 // No-op in Pomme.
 // To prevent the base address for an offscreen pixel image from being moved
 // while you draw into or copy from its pixel map.
-static inline Boolean LockPixels(PixMapHandle handle) { return true; }	// no-op; shall always return true
+static inline Boolean LockPixels(PixMapHandle handle) { (void) handle; return true; }	// no-op; shall always return true
 
 // No-op in Pomme.
 // If the Memory Manager started up in 24-bit mode, strips flag bits from 24-bit memory addresses;
 // otherwise (in 32-bit mode), returns the address unchanged.
 static inline Ptr StripAddress(Ptr ptr) { return ptr; }  // no-op
-
-#pragma GCC diagnostic pop
 
 //-----------------------------------------------------------------------------
 // Memory: Handle

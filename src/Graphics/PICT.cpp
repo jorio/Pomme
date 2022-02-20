@@ -136,6 +136,8 @@ static std::vector<T> UnpackBits(BigEndianIStream& f, UInt16 rowbytes, int packe
 template<typename T>
 static std::vector<T> UnpackAllRows(BigEndianIStream& f, int w, int h, UInt16 rowbytes, std::size_t expectedItemCount)
 {
+	(void) w;
+
 	LOG << "UnpackBits<" << typeid(T).name() << ">";
 
 	std::vector<T> data;

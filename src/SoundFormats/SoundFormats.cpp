@@ -204,14 +204,11 @@ void Pomme::Sound::GetSoundInfo(const Ptr sndhdr, SampledSoundInfo& info)
 
 			info.isCompressed = false;
 			info.bigEndian = true;
-			info.compressionType = 'twos';  // TODO: if 16-bit, should we use 'raw ' or 'NONE'/'twos'?
+			info.compressionType = info.codecBitDepth == 8 ? 'raw ' : 'twos';  // unsigned if 8-bit, signed if 16-bit!
 			info.nChannels = header.extSH_nChannels;
 			info.dataStart = sndhdr + f.Tell();
 			info.compressedLength = header.extSH_nChannels * info.nPackets * info.codecBitDepth / 8;
 			info.decompressedLength = info.compressedLength;
-
-			if (info.codecBitDepth == 8)
-				TODO2("should an 8-bit extSH be 'twos' or 'raw '?");
 			break;
 		}
 

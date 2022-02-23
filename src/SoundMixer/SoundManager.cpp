@@ -119,7 +119,7 @@ OSErr SndChannelStatus(SndChannelPtr chan, short theLength, SCStatusPtr theStatu
 }
 
 // Install a sampled sound as a voice in a channel.
-static void InstallSoundInChannel(SndChannelPtr chan, const Ptr sampledSoundHeader)
+static void InstallSoundInChannel(SndChannelPtr chan, const Ptr sampledSoundHeader, bool forceCopy=false)
 {
 	//---------------------------------
 	// Get internal channel
@@ -145,6 +145,12 @@ static void InstallSoundInChannel(SndChannelPtr chan, const Ptr sampledSoundHead
 		std::unique_ptr<Pomme::Sound::Codec> codec = Pomme::Sound::GetCodec(info.compressionType);
 		codec->Decode(info.nChannels, spanIn, spanOut);
 		impl.source.Init(info.sampleRate, 16, info.nChannels, false, spanOut);
+	}
+	else if (forceCopy)
+	{
+		auto spanOut = impl.source.GetBuffer(info.decompressedLength);
+		memcpy(spanOut.data(), spanIn.data(), spanIn.size());
+		impl.source.Init(info.sampleRate, info.codecBitDepth, info.nChannels, info.bigEndian, spanOut);
 	}
 	else
 	{
@@ -313,7 +319,9 @@ OSErr SndStartFilePlay(
 	SndListHandle sndListHandle = Pomme_SndLoadFileAsResource(fRefNum);
 	long offset = 0;
 	GetSoundHeaderOffset(sndListHandle, &offset);
-	InstallSoundInChannel(chan, ((Ptr) *sndListHandle) + offset);
+	InstallSoundInChannel(chan, ((Ptr) *sndListHandle) + offset, true);
+	DisposeHandle((Handle) sndListHandle);
+	sndListHandle = nullptr;
 
 	auto& impl = GetChannelImpl(chan);
 	if (theCompletion)

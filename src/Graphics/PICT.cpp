@@ -403,8 +403,6 @@ ARGBPixmap Pomme::Graphics::ReadPICT(std::istream& theF, bool skip512)
 
 		opcode = f.Read<SInt16>();
 
-		//printf("~~~~~ OPCODE %04X ~~~~~\n", opcode);
-
 		// Skip reserved opcodes
 		if (opcode >= 0x0100 && opcode <= 0x7FFF)
 		{
@@ -414,10 +412,6 @@ ARGBPixmap Pomme::Graphics::ReadPICT(std::istream& theF, bool skip512)
 
 		switch (opcode)
 		{
-		case 0x0C00:
-			f.Skip(12);
-			break;
-
 		case 0x0000: // nop
 		case 0x001E: // DefHilite
 		case 0x0048: // frameSameRRect

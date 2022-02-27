@@ -148,11 +148,12 @@ if(MSVC)
 	)
 else()
 	target_compile_options(${PROJECT_NAME} PRIVATE
+		-fexceptions
 		-Wall
 		-Wextra
 		-Wshadow
 		-Wno-multichar
 		-Wno-unknown-pragmas
-		-fexceptions
+		-Wstrict-aliasing=2
 	)
 endif()

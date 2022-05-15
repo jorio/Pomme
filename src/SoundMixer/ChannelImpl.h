@@ -44,7 +44,7 @@ public:
 
 	void SetInitializationParameters(long initBits);
 
-	void ApplyParametersToSource(int mask, bool evenIfInactive = false);
+	void ApplyParametersToSource(int mask);
 
 	inline ChannelImpl* GetPrev() const
 	{

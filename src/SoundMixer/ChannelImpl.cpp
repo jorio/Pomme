@@ -48,13 +48,8 @@ void ChannelImpl::SetInitializationParameters(long initBits)
 	source.SetInterpolation(interpolate);
 }
 
-void ChannelImpl::ApplyParametersToSource(int mask, bool evenIfInactive)
+void ChannelImpl::ApplyParametersToSource(int mask)
 {
-	if (!evenIfInactive && !source.active)
-	{
-		return;
-	}
-
 	// Pitch
 	if (mask & kApplyParameters_Pitch)
 	{

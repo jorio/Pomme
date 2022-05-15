@@ -179,7 +179,7 @@ static void InstallSoundInChannel(SndChannelPtr chan, const Ptr sampledSoundHead
 	// The loop param is a special case -- we're detecting it automatically according
 	// to the sound header. If your application needs to force set the loop, it must
 	// issue pommeSetLoopCmd *after* bufferCmd/soundCmd.
-	impl.ApplyParametersToSource(kApplyParameters_All & ~kApplyParameters_Loop, true);
+	impl.ApplyParametersToSource(kApplyParameters_All & ~kApplyParameters_Loop);
 
 	// Override systemwide audio pause.
 	impl.temporaryPause = false;

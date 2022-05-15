@@ -493,9 +493,6 @@ NumVersion SndSoundManagerVersion();
 Boolean Pomme_DecompressSoundResource(SndListHandle* sndHandlePtr, long* offsetToHeader);
 
 // Pomme extension
-void Pomme_PauseAllChannels(Boolean pause);
-
-// Pomme extension
 SndListHandle Pomme_SndLoadFileAsResource(short fRefNum);
 
 #ifdef __cplusplus

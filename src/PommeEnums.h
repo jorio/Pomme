@@ -285,6 +285,8 @@ enum ESndCmds
     sizeCmd = 90,       // obsolete command
     convertCmd = 91,        // obsolete MACE command
     pommeSetLoopCmd = 0x7001,
+    pommePausePlaybackCmd = 0x7002,  // pause playback ('pauseCmd' locks the channel, it doesn't pause playback)
+    pommeResumePlaybackCmd = 0x7003,  // resume playback ('resumeCmd' unlocks the channel, it doesn't unpause playback)
     // Do not define commands above 0x7FFF -- the high bit means a 'snd ' resource has associated sound data
 };
 

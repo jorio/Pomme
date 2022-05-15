@@ -181,9 +181,6 @@ static void InstallSoundInChannel(SndChannelPtr chan, const Ptr sampledSoundHead
 	// issue pommeSetLoopCmd *after* bufferCmd/soundCmd.
 	impl.ApplyParametersToSource(kApplyParameters_All & ~kApplyParameters_Loop);
 
-	// Override systemwide audio pause.
-	impl.temporaryPause = false;
-
 	// Get it going!
 	impl.source.Play();
 }
@@ -264,6 +261,20 @@ OSErr SndDoImmediate(SndChannelPtr chan, const SndCommand* cmd)
 	case pommeSetLoopCmd:
 		impl.loop = cmd->param1;
 		impl.ApplyParametersToSource(kApplyParameters_Loop);
+		break;
+
+	case pommePausePlaybackCmd:
+		if (impl.source.state == cmixer::CM_STATE_PLAYING)
+		{
+			impl.source.Pause();
+		}
+		break;
+
+	case pommeResumePlaybackCmd:
+		if (impl.source.state == cmixer::CM_STATE_PAUSED)	// only resume paused channels -- don't resurrect stopped channels
+		{
+			impl.source.Play();
+		}
 		break;
 
 	default:
@@ -367,27 +378,6 @@ NumVersion SndSoundManagerVersion()
 	v.stage = 0x80;
 	v.nonRelRev = 0;
 	return v;
-}
-
-//-----------------------------------------------------------------------------
-// Extension: pause/unpause channels that are currently playing
-
-void Pomme_PauseAllChannels(Boolean pause)
-{
-	for (auto* chan = Pomme::Sound::gHeadChan; chan; chan = chan->GetNext())
-	{
-		auto& source = chan->source;
-		if (pause && source.state == cmixer::CM_STATE_PLAYING && !chan->temporaryPause)
-		{
-			source.Pause();
-			chan->temporaryPause = true;
-		}
-		else if (!pause && source.state == cmixer::CM_STATE_PAUSED && chan->temporaryPause)
-		{
-			source.Play();
-			chan->temporaryPause = false;
-		}
-	}
 }
 
 //-----------------------------------------------------------------------------

@@ -34,8 +34,6 @@ public:
 	bool loop;
 	bool interpolate;
 
-	bool temporaryPause = false;
-
 	ChannelImpl(SndChannelPtr _macChannel, bool transferMacChannelOwnership);
 
 	~ChannelImpl();

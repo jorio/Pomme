@@ -274,11 +274,23 @@ Boolean Pomme_DecompressSoundResource(SndListHandle* sndHandlePtr, long* offsetT
 
 	if (!inInfo.isCompressed)
 	{
-		// Raw big-endian PCM
+		// Raw PCM
 		if (inInfo.decompressedLength != inInfo.compressedLength)
 			throw std::runtime_error("decompressedLength != compressedLength???");
 
 		memcpy(outDataStart, inDataStart, inInfo.decompressedLength);
+
+		// If it's big endian, swap the bytes
+		int bytesPerSample = inInfo.codecBitDepth / 8;
+		if (inInfo.bigEndian && bytesPerSample > 1)
+		{
+			int nIntegers = inInfo.decompressedLength / bytesPerSample;
+			if (inInfo.decompressedLength != nIntegers * bytesPerSample)
+				throw std::runtime_error("unexpected big-endian raw PCM decompressed length");
+
+			ByteswapInts(bytesPerSample, nIntegers, outDataStart);
+			outInfo.bigEndian = false;
+		}
 	}
 	else
 	{

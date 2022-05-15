@@ -439,6 +439,13 @@ void Source::SetInterpolation(bool newInterpolation)
 
 void Source::Play()
 {
+	if (length == 0)
+	{
+		// Don't attempt to play an empty source as this would result
+		// in instant starvation when filling mixer buffer
+		return;
+	}
+
 	gMixer.Lock();
 	state = CM_STATE_PLAYING;
 	if (!active)
@@ -528,16 +535,18 @@ void WavStream::RewindImplementation()
 	idx = 0;
 }
 
-void WavStream::FillBuffer(int16_t* dst, int len)
+void WavStream::FillBuffer(int16_t* dst, int fillLength)
 {
 	int x, n;
 
-	len /= 2;
+	fillLength /= 2;
 
-	while (len > 0)
+	while (fillLength > 0)
 	{
-		n = MIN(len, length - idx);
-		len -= n;
+		n = MIN(fillLength, length - idx);
+
+		fillLength -= n;
+
 		if (bigEndian && bitdepth == 16 && channels == 1)
 		{
 			WAV_PROCESS_LOOP({
@@ -581,7 +590,7 @@ void WavStream::FillBuffer(int16_t* dst, int len)
 			});
 		}
 		// Loop back and continue filling buffer if we didn't fill the buffer
-		if (len > 0)
+		if (fillLength > 0)
 		{
 			idx = 0;
 		}

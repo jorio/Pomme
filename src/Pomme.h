@@ -103,7 +103,7 @@ OSErr ResError(void);
 void UseResFile(short refNum);
 
 // Gets the file reference number of the current resource file.
-short CurResFile();
+short CurResFile(void);
 
 void CloseResFile(short refNum);
 

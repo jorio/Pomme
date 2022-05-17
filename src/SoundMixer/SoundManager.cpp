@@ -106,14 +106,20 @@ OSErr SndDisposeChannel(SndChannelPtr macChanPtr, Boolean quietNow)
 
 OSErr SndChannelStatus(SndChannelPtr chan, short theLength, SCStatusPtr theStatus)
 {
-	(void) theLength;
+	// Must have room to write an entire SCStatus struct
+	if ((size_t) theLength < sizeof(SCStatus))
+	{
+		return paramErr;
+	}
 
 	*theStatus = {};
 
 	auto& source = GetChannelImpl(chan).source;
 
-	theStatus->scChannelPaused = source.GetState() == cmixer::CM_STATE_PAUSED;
-	theStatus->scChannelBusy   = source.GetState() == cmixer::CM_STATE_PLAYING;
+	int state = source.GetState();
+
+	theStatus->scChannelPaused = state == cmixer::CM_STATE_PAUSED;
+	theStatus->scChannelBusy   = state != cmixer::CM_STATE_STOPPED;
 
 	return noErr;
 }

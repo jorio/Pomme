@@ -2,6 +2,10 @@
 #include "SoundMixer/ChannelImpl.h"
 #include <cassert>
 
+#ifndef POMME_MAX_CHANNEL_GAIN
+	#define POMME_MAX_CHANNEL_GAIN 2.5
+#endif
+
 namespace Pomme::Sound
 {
 	extern ChannelImpl* gHeadChan;
@@ -61,6 +65,14 @@ void ChannelImpl::ApplyParametersToSource(int mask)
 	// Pan and gain
 	if (mask & kApplyParameters_PanAndGain)
 	{
+		if (gain > POMME_MAX_CHANNEL_GAIN)
+		{
+#if _DEBUG
+			printf("Capping extreme channel gain (%f)\n", gain);
+#endif
+			gain = POMME_MAX_CHANNEL_GAIN;
+		}
+
 		source.SetPan(pan);
 		source.SetGain(gain);
 	}

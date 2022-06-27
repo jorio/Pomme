@@ -8,10 +8,11 @@ The goal isn't to achieve 100% source compatibility with old Mac C programs, but
 
 ## Games ported with Pomme
 
-- [Bugdom](https://github.com/jorio/bugdom)
-- [Mighty Mike](https://github.com/jorio/mightymike)
-- [Nanosaur](https://github.com/jorio/nanosaur)
-- [Otto Matic](https://github.com/jorio/ottomatic)
+- [Bugdom](https://github.com/jorio/Bugdom)
+- [Cro-Mag Rally](https://github.com/jorio/CroMagRally)
+- [Mighty Mike](https://github.com/jorio/MightyMike)
+- [Nanosaur](https://github.com/jorio/Nanosaur)
+- [Otto Matic](https://github.com/jorio/OttoMatic)
 
 ## License
 

@@ -88,9 +88,9 @@ static void ParseINST(Pomme::BigEndianIStream& f, Pomme::Sound::SampledSoundInfo
 	}
 }
 
-std::streampos Pomme::Sound::GetSoundInfoFromAIFF(std::istream& input, SampledSoundInfo& info)
+static std::streampos GetSoundInfoFromAIFF(std::istream& input, Pomme::Sound::SampledSoundInfo& info)
 {
-	BigEndianIStream f(input);
+	Pomme::BigEndianIStream f(input);
 
 	AIFFAssert('FORM' == f.Read<uint32_t>(), "AIFF: invalid FORM");
 	auto formSize = f.Read<uint32_t>();
@@ -181,3 +181,16 @@ std::streampos Pomme::Sound::GetSoundInfoFromAIFF(std::istream& input, SampledSo
 	return sampledSoundDataOffset;
 }
 
+SndListHandle Pomme::Sound::LoadAIFFAsResource(std::istream& stream)
+{
+	Pomme::Sound::SampledSoundInfo info = {};
+	std::streampos ssndStart = GetSoundInfoFromAIFF(stream, info);
+
+	char* dataOffset = nullptr;
+	SndListHandle h = info.MakeStandaloneResource(&dataOffset);
+
+	stream.seekg(ssndStart, std::ios::beg);
+	stream.read(dataOffset, info.compressedLength);
+
+	return h;
+}

@@ -32,6 +32,8 @@ namespace Pomme::Sound
 		int8_t baseNote;
 		uint32_t loopStart;
 		uint32_t loopEnd;
+
+		SndListHandle MakeStandaloneResource(char** dataOffsetOut = nullptr) const;
 	};
 
 	class Codec
@@ -101,7 +103,8 @@ namespace Pomme::Sound
 
 	void GetSoundInfoFromSndResource(Handle sndHandle, SampledSoundInfo& info);
 
-	std::streampos GetSoundInfoFromAIFF(std::istream& input, SampledSoundInfo& info);
+	SndListHandle LoadAIFFAsResource(std::istream& input);
+	SndListHandle LoadMP3AsResource(std::istream& input);
 
 	std::unique_ptr<Pomme::Sound::Codec> GetCodec(uint32_t fourCC);
 }

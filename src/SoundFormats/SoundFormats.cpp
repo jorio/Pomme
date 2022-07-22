@@ -230,24 +230,61 @@ void Pomme::Sound::GetSoundInfoFromSndResource(Handle sndHandle, SampledSoundInf
 	GetSoundInfo(sndhdr, info);
 }
 
+SndListHandle Pomme::Sound::SampledSoundInfo::MakeStandaloneResource(char** dataOffsetOut) const
+{
+	const char* data = dataStart;
+
+	SampledSoundInfo info = *this;
+
+	Handle h = NewHandleClear(2 + 4 + sizeof(info) + compressedLength);
+	Ptr p = *h;
+
+	memcpy(p, "poPOMM", 6);		// "po": see kSoundResourceType_Pomme; "POMM": see GetSoundInfo
+	p += 6;
+
+	info.dataStart = p + sizeof(info);
+	memcpy(p, &info, sizeof(info));
+	p += sizeof(info);
+
+	if (data != nullptr)
+	{
+		memcpy(p, data, info.compressedLength);
+	}
+
+	if (dataOffsetOut != nullptr)
+	{
+		*dataOffsetOut = p;
+	}
+
+	return (SndListHandle) h;
+}
+
 //-----------------------------------------------------------------------------
 // Extension: load AIFF file as resource
 
 SndListHandle Pomme_SndLoadFileAsResource(short fRefNum)
 {
+	auto& spec = Pomme::Files::GetSpec(fRefNum);
 	auto& stream = Pomme::Files::GetStream(fRefNum);
 
-	Pomme::Sound::SampledSoundInfo info = {};
-	std::streampos ssndStart = Pomme::Sound::GetSoundInfoFromAIFF(stream, info);
+	std::string fileName(spec.cName);
+	std::transform(fileName.begin(), fileName.end(), fileName.begin(), tolower);
 
-	stream.seekg(ssndStart, std::ios::beg);
+	// Guess media container from extension
+	if (fileName.ends_with(".aiff")
+		|| fileName.ends_with(".aifc")
+		|| fileName.ends_with(".aif"))
+	{
+		return LoadAIFFAsResource(stream);
+	}
+	else if (fileName.ends_with(".mp3"))
+	{
+#ifndef POMME_NO_MP3
+		return LoadMP3AsResource(stream);
+#endif
+	}
 
-	Handle h = NewHandleClear(2 + 4 + sizeof(SampledSoundInfo) + info.compressedLength);
-	memcpy(*h, "poPOMM", 6);
-	memcpy(*h+6, &info, sizeof(SampledSoundInfo));
-	stream.read(*h+6+sizeof(SampledSoundInfo), info.compressedLength);
-
-	return (SndListHandle) h;
+	return nullptr;
 }
 
 //-----------------------------------------------------------------------------

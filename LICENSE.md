@@ -168,3 +168,15 @@ by Tristan Brindle (Boost license 1.0):
 > FOR ANY DAMAGES OR OTHER LIABILITY, WHETHER IN CONTRACT, TORT OR OTHERWISE,
 > ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 > DEALINGS IN THE SOFTWARE.
+
+--------
+
+Portions copied from [lieff/minimp3](https://github.com/lieff/minimp3)
+(Creative Commons Zero v1.0 Universal license):
+- minimp3.h
+
+> To the extent possible under law, the author(s) have dedicated all copyright
+> and related and neighboring rights to this software to the public domain
+> worldwide.
+> This software is distributed without any warranty.
+> See <http://creativecommons.org/publicdomain/zero/1.0/>.

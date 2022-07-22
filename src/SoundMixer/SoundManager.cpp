@@ -334,6 +334,12 @@ OSErr SndStartFilePlay(
 	}
 
 	SndListHandle sndListHandle = Pomme_SndLoadFileAsResource(fRefNum);
+
+	if (!sndListHandle)
+	{
+		return badFileFormat;
+	}
+
 	long offset = 0;
 	GetSoundHeaderOffset(sndListHandle, &offset);
 	InstallSoundInChannel(chan, ((Ptr) *sndListHandle) + offset, true);

@@ -54,6 +54,12 @@ else()
 	add_compile_definitions(POMME_NO_SOUND_FORMATS)
 endif()
 
+if (NOT(POMME_NO_MP3))
+	list(APPEND POMME_SOURCES ${POMME_SRCDIR}/SoundFormats/mp3.cpp)
+else()
+	add_compile_definitions(POMME_NO_MP3)
+endif()
+
 if (NOT(POMME_NO_SOUND_MIXER))
 	list(APPEND POMME_SOURCES
 		${POMME_SRCDIR}/SoundMixer/ChannelImpl.cpp

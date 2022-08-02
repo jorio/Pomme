@@ -3,6 +3,7 @@
 #include "PommeSound.h"
 #include "Utilities/memstream.h"
 #include "Utilities/bigendianstreams.h"
+#include <Utilities/StringUtils.h>
 #include <cstring>
 
 using namespace Pomme::Sound;
@@ -267,17 +268,17 @@ SndListHandle Pomme_SndLoadFileAsResource(short fRefNum)
 	auto& spec = Pomme::Files::GetSpec(fRefNum);
 	auto& stream = Pomme::Files::GetStream(fRefNum);
 
-	std::string fileName(spec.cName);
-	std::transform(fileName.begin(), fileName.end(), fileName.begin(), tolower);
+	std::string fileName = UppercaseCopy(spec.cName);
+	fs::path extension = fs::path(AsU8(fileName)).extension();
 
 	// Guess media container from extension
-	if (fileName.ends_with(".aiff")
-		|| fileName.ends_with(".aifc")
-		|| fileName.ends_with(".aif"))
+	if (extension == ".AIFF"
+		|| extension == ".AIFC"
+		|| extension == ".AIF")
 	{
 		return LoadAIFFAsResource(stream);
 	}
-	else if (fileName.ends_with(".mp3"))
+	else if (extension == ".MP3")
 	{
 #ifndef POMME_NO_MP3
 		return LoadMP3AsResource(stream);

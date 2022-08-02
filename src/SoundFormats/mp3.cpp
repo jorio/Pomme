@@ -16,7 +16,7 @@ SndListHandle Pomme::Sound::LoadMP3AsResource(std::istream& stream)
 	mp3dec_t context = {};
 	mp3dec_init(&context);
 
-	mp3dec_frame_info_t frameInfo;
+	mp3dec_frame_info_t frameInfo = {};
 
 	std::vector<uint8_t> fileBuf;
 	std::vector<mp3d_sample_t> songPCM;

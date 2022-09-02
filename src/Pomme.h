@@ -1,5 +1,9 @@
 #pragma once
 
+#if __APPLE__ && __POWERPC__
+#include "CompilerSupport/CoexistWithCarbon.h"
+#endif
+
 #include "PommeTypes.h"
 #include "PommeEnums.h"
 #include "PommeDebug.h"

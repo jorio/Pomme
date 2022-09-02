@@ -134,6 +134,11 @@ typedef enum
 {
 	kQ3EndianBig                                = 0,
 	kQ3EndianLittle                             = 1,
+#if __BIG_ENDIAN__
+	kQ3EndianNative								= kQ3EndianBig,
+#else
+	kQ3EndianNative								= kQ3EndianLittle,
+#endif
 	kQ3EndianSize32                             = 0xFFFFFFFF
 } TQ3Endian;
 

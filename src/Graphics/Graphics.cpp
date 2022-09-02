@@ -576,7 +576,9 @@ void CopyBits(
 			// if the source pixel is not equal to the background color.
 
 			UInt32 transparentColor = penBG;
+#if !(__BIG_ENDIAN__)
 			ByteswapInts(sizeof(transparentColor), 1, &transparentColor);  // need to byteswap because ARGBPixmap.GetPtr returns a pointer to raw (big-endian) ARGB ints
+#endif
 
 			for (int y = 0; y < srcRectHeight; y++)
 			{

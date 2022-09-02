@@ -110,7 +110,7 @@ void Q3Pixmap_ApplyEdgePadding(TQ3Pixmap* pm)
 					pm->width,
 					pm->height,
 					pm->rowBytes,
-					pm->byteOrder==kQ3EndianBig? 0x0080: 0x8000);
+					pm->byteOrder==kQ3EndianNative? 0x8000: 0x0080);
 			break;
 
 		case kQ3PixelTypeARGB32:
@@ -120,7 +120,7 @@ void Q3Pixmap_ApplyEdgePadding(TQ3Pixmap* pm)
 					pm->width,
 					pm->height,
 					pm->rowBytes,
-					pm->byteOrder==kQ3EndianBig? 0x000000FF: 0xFF000000);
+					pm->byteOrder==kQ3EndianNative? 0xFF000000: 0x000000FF);
 			break;
 
 		case kQ3PixelTypeRGB16:

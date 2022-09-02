@@ -87,7 +87,7 @@ void cmixer::InitWithSDL()
 	// Init SDL audio
 	SDL_AudioSpec fmt = {};
 	fmt.freq = 44100;
-	fmt.format = AUDIO_S16;
+	fmt.format = AUDIO_S16SYS;
 	fmt.channels = 2;
 	fmt.samples = 1024;
 	fmt.callback = [](void* udata, Uint8* stream, int size)

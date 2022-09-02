@@ -8,6 +8,7 @@ The goal isn't to achieve 100% source compatibility with old Mac C programs, but
 
 ## Games ported with Pomme
 
+- [Billy Frontier](https://github.com/jorio/BillyFrontier)
 - [Bugdom](https://github.com/jorio/Bugdom)
 - [Cro-Mag Rally](https://github.com/jorio/CroMagRally)
 - [Mighty Mike](https://github.com/jorio/MightyMike)

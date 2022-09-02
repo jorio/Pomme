@@ -402,9 +402,9 @@ void Pomme::Sound::InitMixer()
 
 void Pomme::Sound::ShutdownMixer()
 {
-	cmixer::ShutdownWithSDL();
 	while (Pomme::Sound::gHeadChan)
 	{
 		SndDisposeChannel(Pomme::Sound::gHeadChan->macChannel, true);
 	}
+	cmixer::ShutdownWithSDL();
 }

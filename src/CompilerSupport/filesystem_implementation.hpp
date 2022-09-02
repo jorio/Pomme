@@ -132,7 +132,7 @@
 #include <langinfo.h>
 #endif
 #endif
-#ifdef GHC_OS_MACOS
+#if defined(GHC_OS_MACOS) && !defined(__POWERPC__)
 #include <Availability.h>
 #endif
 

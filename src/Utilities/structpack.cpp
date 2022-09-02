@@ -111,7 +111,7 @@ static int Unpack(const char* format, char* buffer)
 	return totalBytes;
 }
 
-int ByteswapStructs(const char* format, int structSize, int structCount, void* buffer)
+int UnpackStructs(const char* format, int structSize, int structCount, void* buffer)
 {
 	char* byteBuffer = (char*) buffer;
 	int totalBytes = 0;

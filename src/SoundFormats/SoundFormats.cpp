@@ -38,7 +38,7 @@ static_assert(sizeof(SampledSoundHeader) >= 22 && sizeof(SampledSoundHeader) <= 
 			  "unexpected SampledSoundHeader size");
 
 constexpr int kSampledSoundHeaderLength = 22;
-constexpr const char* kSampledSoundHeaderPackFormat = "IiIIIbb";
+constexpr const char* kSampledSoundHeaderPackFormat = ">IiIIIbb";
 
 enum SampledSoundEncoding
 {
@@ -138,7 +138,7 @@ void Pomme::Sound::GetSoundInfo(const Ptr sndhdr, SampledSoundInfo& info)
 	// Read in SampledSoundHeader and unpack it.
 	SampledSoundHeader header;
 	f.Read(reinterpret_cast<char*>(&header), kSampledSoundHeaderLength);
-	ByteswapStructs(kSampledSoundHeaderPackFormat, kSampledSoundHeaderLength, 1, reinterpret_cast<char*>(&header));
+	UnpackStructs(kSampledSoundHeaderPackFormat, kSampledSoundHeaderLength, 1, reinterpret_cast<char*>(&header));
 
 	if (header.zero != 0)
 	{
@@ -159,7 +159,7 @@ void Pomme::Sound::GetSoundInfo(const Ptr sndhdr, SampledSoundInfo& info)
 		case kSampledSoundEncoding_stdSH:
 			info.compressionType = 'raw ';  // unsigned (in AIFF-C files, 'NONE' means signed!)
 			info.isCompressed = false;
-			info.bigEndian = false;
+			info.bigEndian = kIsBigEndianNative;  // just use the native endianness for this
 			info.codecBitDepth = 8;
 			info.nChannels = 1;
 			info.nPackets = header.stdSH_nBytes;
@@ -187,7 +187,7 @@ void Pomme::Sound::GetSoundInfo(const Ptr sndhdr, SampledSoundInfo& info)
 			std::unique_ptr<Pomme::Sound::Codec> codec = Pomme::Sound::GetCodec(info.compressionType);
 
 			info.isCompressed = true;
-			info.bigEndian = false;
+			info.bigEndian = kIsBigEndianNative;  // just use the native endianness for this
 			info.nChannels = header.cmpSH_nChannels;
 			info.dataStart = sndhdr + f.Tell();
 			info.codecBitDepth = codec->AIFFBitDepth();
@@ -318,16 +318,16 @@ Boolean Pomme_DecompressSoundResource(SndListHandle* sndHandlePtr, long* offsetT
 
 		memcpy(outDataStart, inDataStart, inInfo.decompressedLength);
 
-		// If it's big endian, swap the bytes
+		// If the PCM data's endianness doesn't match our native endianness, swap the bytes
 		int bytesPerSample = inInfo.codecBitDepth / 8;
-		if (inInfo.bigEndian && bytesPerSample > 1)
+		if (inInfo.bigEndian != kIsBigEndianNative && bytesPerSample > 1)
 		{
 			int nIntegers = inInfo.decompressedLength / bytesPerSample;
 			if (inInfo.decompressedLength != nIntegers * bytesPerSample)
 				throw std::runtime_error("unexpected big-endian raw PCM decompressed length");
 
 			ByteswapInts(bytesPerSample, nIntegers, outDataStart);
-			outInfo.bigEndian = false;
+			outInfo.bigEndian = kIsBigEndianNative;
 		}
 	}
 	else
@@ -337,8 +337,13 @@ Boolean Pomme_DecompressSoundResource(SndListHandle* sndHandlePtr, long* offsetT
 		auto spanOut = std::span(outDataStart, inInfo.decompressedLength);
 		codec->Decode(inInfo.nChannels, spanIn, spanOut);
 
+#if __BIG_ENDIAN__
+		outInfo.compressionType		= 'twos';
+		outInfo.bigEndian			= true;			// convert to native endianness
+#else
 		outInfo.compressionType		= 'swot';
-		outInfo.bigEndian			= false;
+		outInfo.bigEndian			= false;		// convert to native endianness
+#endif
 		outInfo.codecBitDepth		= 16;
 		outInfo.nPackets			= codec->SamplesPerPacket() * inInfo.nPackets;
 	}

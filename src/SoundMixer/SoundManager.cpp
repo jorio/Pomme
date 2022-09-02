@@ -150,7 +150,7 @@ static void InstallSoundInChannel(SndChannelPtr chan, const Ptr sampledSoundHead
 
 		std::unique_ptr<Pomme::Sound::Codec> codec = Pomme::Sound::GetCodec(info.compressionType);
 		codec->Decode(info.nChannels, spanIn, spanOut);
-		impl.source.Init(info.sampleRate, 16, info.nChannels, false, spanOut);
+		impl.source.Init(info.sampleRate, 16, info.nChannels, kIsBigEndianNative, spanOut);
 	}
 	else if (forceCopy)
 	{

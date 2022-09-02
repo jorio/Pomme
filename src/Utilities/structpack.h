@@ -8,7 +8,7 @@
 
 template<typename T> T ByteswapScalar(T x)
 {
-#if TARGET_RT_BIGENDIAN
+#if __BIG_ENDIAN__
 	return x;
 #else
 	char* b = (char*)&x;

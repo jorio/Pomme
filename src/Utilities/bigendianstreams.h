@@ -48,7 +48,7 @@ namespace Pomme
 		{
 			char b[sizeof(T)];
 			Read(b, sizeof(T));
-#if !(TARGET_RT_BIGENDIAN)
+#if !(__BIG_ENDIAN__)
 			if constexpr (sizeof(T) > 1)
 			{
 				std::reverse(b, b + sizeof(T));
@@ -80,7 +80,7 @@ namespace Pomme
 		void Write(T value)
 		{
 			char* b = (char*) &value;
-#if !(TARGET_RT_BIGENDIAN)
+#if !(__BIG_ENDIAN__)
 			if constexpr (sizeof(T) > 1)
 			{
 				std::reverse(b, b + sizeof(T));

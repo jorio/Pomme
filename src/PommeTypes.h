@@ -19,7 +19,7 @@ typedef unsigned short                  UInt16;
 typedef unsigned int                    UInt32;
 typedef unsigned long long              UInt64;
 
-#if TARGET_RT_BIGENDIAN
+#if __BIG_ENDIAN__
 typedef struct { UInt32 hi, lo; } UnsignedWide;
 #else
 typedef struct { UInt32 lo, hi; } UnsignedWide;
@@ -283,7 +283,7 @@ typedef UInt8 KeyMapByteArray[16];
 //-----------------------------------------------------------------------------
 // 'vers' resource
 
-#if TARGET_RT_BIG_ENDIAN
+#if __BIG_ENDIAN__
 //BCD encoded, e.g. "4.2.1a3" is 0x04214003
 typedef struct NumVersion
 {

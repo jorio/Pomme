@@ -2,21 +2,39 @@
 #include <algorithm>
 #include <stdexcept>
 
+#if __BIG_ENDIAN__
+#define kNativeEndiannessIndicator '>'
+#else
+#define kNativeEndiannessIndicator '<'
+#endif
+
 static int Unpack(const char* format, char* buffer)
 {
 	int totalBytes = 0;
 	int repeat = 0;
 
-	for (const char* c2 = format; *c2; c2++)
+	if (!format)
+	{
+		throw std::invalid_argument("can't unpack without a format");
+	}
+	
+	char endiannessIndicator = format[0];
+	if (endiannessIndicator != '<' && endiannessIndicator != '>')
+	{
+		throw std::invalid_argument("first format char must be endianness indicator");
+	}
+
+	// If the struct's endianness matches our native endianness,
+	// we won't do the byteswapping, but we'll still check the format string for consistency
+	bool isNative = endiannessIndicator == kNativeEndiannessIndicator;
+
+	for (const char* c2 = format+1; *c2; c2++)
 	{
 		char c = *c2;
 		int fieldLength = -1;
 
 		switch (c)
 		{
-		case '>': // big endian indicator (for compat with python's struct) - OK just ignore
-			continue;
-
 		case ' ':
 		case '\r':
 		case '\n':
@@ -68,7 +86,7 @@ static int Unpack(const char* format, char* buffer)
 		if (!repeat)
 			repeat = 1;
 
-		bool doSwap = fieldLength > 1;
+		bool doSwap = !isNative && fieldLength > 1;
 
 		if (buffer)
 		{

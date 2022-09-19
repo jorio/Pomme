@@ -191,6 +191,12 @@ static inline int32_t UnpackI32BEInPlace(void* data) { return (int32_t) UnpackU3
 static inline int16_t UnpackI16LEInPlace(void* data) { return (int16_t) UnpackU16LEInPlace(data); }
 static inline int32_t UnpackI32LEInPlace(void* data) { return (int32_t) UnpackU32LEInPlace(data); }
 
+//-----------------------------------------------------------------------------
+// Pack variants. Functionally identical to unpack, but with a different intent:
+// convert a native scalar to a specific endianness.
+
+static inline uint32_t PackU32BE(const void *nativeEndianData) { return UnpackU32BE(nativeEndianData); }
+
 #ifdef __cplusplus
 }
 #endif

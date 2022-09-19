@@ -29,9 +29,9 @@ static Handle Get4bitIconAsARGB(Handle colorIcon, Ptr bwMask, int width)
 		if (!bwMask)
 			;
 		else if (width == 32)
-			scanlineMask = Byteswap32(bwMask + y*4);
+			scanlineMask = UnpackU32BE(bwMask + y*4);
 		else if (width == 16)
-			scanlineMask = Byteswap16(bwMask + y*2);
+			scanlineMask = UnpackU16BE(bwMask + y*2);
 
 		for (int x = 0; x < width; x++)
 		{
@@ -73,9 +73,9 @@ static Handle Get8bitIconAsARGB(Handle colorIcon, Ptr bwMask, int width)
 		if (!bwMask)
 			;
 		else if (width == 32)
-			scanlineMask = Byteswap32(bwMask + y*4);
+			scanlineMask = UnpackU32BE(bwMask + y*4);
 		else if (width == 16)
-			scanlineMask = Byteswap16(bwMask + y*2);
+			scanlineMask = UnpackU16BE(bwMask + y*2);
 
 		for (int x = 0; x < width; x++)
 		{

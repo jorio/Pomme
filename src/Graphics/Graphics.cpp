@@ -394,7 +394,7 @@ static void _FillRect(const int left, const int top, const int right, const int 
 	}
 	curPort->DamageRegion(clippedDstRect);
 
-	fillColor = ByteswapScalar(fillColor);  // convert to big-endian
+	fillColor = PackU32BE(&fillColor);		// convert to big-endian
 
 	UInt32* dst = curPort->pixels.GetPtr(clippedDstRect.left, clippedDstRect.top);
 
@@ -420,7 +420,7 @@ void EraseRect(const struct Rect* r)
 
 void LineTo(short x1, short y1)
 {
-	auto color = ByteswapScalar(penFG);
+	UInt32 color = PackU32BE(&penFG);
 
 	auto offx = curPort->port.portRect.left;
 	auto offy = curPort->port.portRect.top;
@@ -455,7 +455,8 @@ void LineTo(short x1, short y1)
 
 void FrameRect(const Rect* r)
 {
-	auto color = ByteswapScalar(penFG);
+	UInt32 color = PackU32BE(&penFG);
+
 	auto& pm = curPort->pixels;
 	auto offx = curPort->port.portRect.left;
 	auto offy = curPort->port.portRect.top;
@@ -643,7 +644,7 @@ void DrawStringC(const char* cstr)
 
 void DrawChar(char c)
 {
-	UInt32 fg = ByteswapScalar(penFG);
+	UInt32 fg = PackU32BE(&penFG);
 
 	auto& glyph = SysFont::GetGlyph(c);
 

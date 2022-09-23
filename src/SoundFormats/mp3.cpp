@@ -24,17 +24,13 @@ SndListHandle Pomme::Sound::LoadMP3AsResource(std::istream& stream)
 
 	int totalSamples = 0;
 
-	while (true)
+	while (!stream.eof() || !fileBuf.empty())
 	{
-		// Refill buffer
-		if (fileBuf.size() < MINIMP3_BUF_SIZE)
+		// Refill the buffer as long as data is available in the input stream.
+		// Once the stream is depleted, keep feeding the buffer to mp3dec until the buffer is empty.
+		if (fileBuf.size() < MINIMP3_BUF_SIZE
+			&& !stream.eof())
 		{
-			if (stream.eof())
-			{
-				// bail
-				break;
-			}
-
 			auto oldSize = fileBuf.size();
 			auto toRead = MINIMP3_BUF_SIZE - oldSize;
 
@@ -43,6 +39,11 @@ SndListHandle Pomme::Sound::LoadMP3AsResource(std::istream& stream)
 
 			auto didRead = stream.gcount();
 			fileBuf.resize(oldSize + didRead);
+		}
+
+		if (fileBuf.empty())
+		{
+			break;
 		}
 
 		int numDecodedSamples = mp3dec_decode_frame(&context, fileBuf.data(), (int) fileBuf.size(), tempPCM.data(), &frameInfo);

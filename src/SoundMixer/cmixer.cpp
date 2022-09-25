@@ -247,6 +247,7 @@ void Source::Init(int theSampleRate, int theLength)
 {
 	this->samplerate = theSampleRate;
 	this->length = theLength;
+	this->sustainOffset = 0;
 	SetGain(1);
 	SetPan(0);
 	SetPitch(1);
@@ -592,7 +593,7 @@ void WavStream::FillBuffer(int16_t* dst, int fillLength)
 		// Loop back and continue filling buffer if we didn't fill the buffer
 		if (fillLength > 0)
 		{
-			idx = 0;
+			idx = sustainOffset;
 		}
 	}
 }

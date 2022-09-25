@@ -175,8 +175,21 @@ static void InstallSoundInChannel(SndChannelPtr chan, const Ptr sampledSoundHead
 	{
 		impl.source.SetLoop(true);
 
-		if (info.loopStart != 0)
-			TODO2("Warning: looping on a portion of the snd isn't supported yet");
+		// Set sustain loop start frame
+		if ((int) info.loopStart >= impl.source.length)
+		{
+			TODO2("Warning: Illegal sustain loop start frame");
+		}
+		else
+		{
+			impl.source.sustainOffset = info.loopStart;
+		}
+
+		// Check sustain loop end frame
+		if ((int) info.loopEnd != impl.source.length)
+		{
+			TODO2("Warning: Unsupported sustain loop end frame");
+		}
 	}
 
 	//---------------------------------

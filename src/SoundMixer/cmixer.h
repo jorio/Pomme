@@ -46,6 +46,7 @@ namespace cmixer
 		int16_t pcmbuf[BUFFER_SIZE];    // Internal buffer with raw stereo PCM
 		int samplerate;                 // Stream's native samplerate
 		int length;                     // Stream's length in frames
+		int sustainOffset;              // Offset of the sustain loop in frames
 		int end;                        // End index for the current play-through
 		int state;                      // Current state (playing|paused|stopped)
 		int64_t position;               // Current playhead position (fixed point)

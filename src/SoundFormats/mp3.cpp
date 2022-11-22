@@ -64,8 +64,13 @@ SndListHandle Pomme::Sound::LoadMP3AsResource(std::istream& stream)
 	}
 
 	Pomme::Sound::SampledSoundInfo info = {};
-	info.compressionType	= 'swot';
+#if __BIG_ENDIAN__
+	info.compressionType	= 'twos';
+	info.bigEndian			= true;
+#else
+	info.compressionType	= 'sowt';
 	info.bigEndian			= false;
+#endif
 	info.isCompressed		= false;
 	info.baseNote			= 60;		// Middle C
 	info.codecBitDepth		= 8 * sizeof(mp3d_sample_t);

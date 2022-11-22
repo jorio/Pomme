@@ -163,7 +163,7 @@ void Mixer::SetMasterGain(double newGain)
 {
 	if (newGain < 0)
 		newGain = 0;
-	gain = FX_FROM_FLOAT(newGain);
+	gain = (int) FX_FROM_FLOAT(newGain);
 }
 
 void Mixer::Process(int16_t* dst, int len)
@@ -398,8 +398,8 @@ void Source::RecalcGains()
 {
 	double l = this->gain * (pan <= 0. ? 1. : 1. - pan);
 	double r = this->gain * (pan >= 0. ? 1. : 1. + pan);
-	this->lgain = FX_FROM_FLOAT(l);
-	this->rgain = FX_FROM_FLOAT(r);
+	this->lgain = (int) FX_FROM_FLOAT(l);
+	this->rgain = (int) FX_FROM_FLOAT(r);
 }
 
 void Source::SetGain(double newGain)
@@ -425,7 +425,7 @@ void Source::SetPitch(double newPitch)
 	{
 		newRate = 0.001;
 	}
-	rate = FX_FROM_FLOAT(newRate);
+	rate = (int) FX_FROM_FLOAT(newRate);
 }
 
 void Source::SetLoop(bool newLoop)

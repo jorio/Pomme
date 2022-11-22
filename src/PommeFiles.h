@@ -15,7 +15,7 @@ namespace Pomme::Files
 		SInt16			id;
 		Byte			flags;
 		SInt32			size;
-		UInt32			dataOffset;
+		std::streamoff	dataOffset;
 		std::string		name;
 	};
 

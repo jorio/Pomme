@@ -246,7 +246,7 @@ OSErr ResolveAlias(const FSSpec* spec, AliasHandle alias, FSSpec* target, Boolea
 {
 	*wasChanged = false;
 
-	int aliasSize = GetHandleSize(alias);
+	Size aliasSize = GetHandleSize(alias);
 
 	// the target FN is at offset 50, and the target FN is a Str63, so 50+64
 	if (aliasSize < 50 + 64)

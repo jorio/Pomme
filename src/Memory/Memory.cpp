@@ -97,7 +97,7 @@ Handle NewHandle(Size size)
 	if (size > 0x7FFFFFFF)
 		throw std::invalid_argument("trying to alloc massive handle");
 
-	BlockDescriptor* block = BlockDescriptor::Allocate(size);
+	BlockDescriptor* block = BlockDescriptor::Allocate((UInt32) size);
 	return &block->ptrToData;
 }
 
@@ -175,7 +175,7 @@ Ptr NewPtr(Size byteCount)
 #if !POMME_PTR_TRACKING
 	return new char[byteCount];
 #else
-	BlockDescriptor* bd = BlockDescriptor::Allocate(byteCount);
+	BlockDescriptor* bd = BlockDescriptor::Allocate((UInt32) byteCount);
 	return bd->ptrToData;
 #endif
 }

@@ -63,7 +63,7 @@ short FSpOpenResFile(const FSSpec* spec, char permission)
 	}
 
 	auto f = Pomme::BigEndianIStream(Pomme::Files::GetStream(slot));
-	auto resForkOff = f.Tell();
+	std::streamoff resForkOff = f.Tell();
 
 	// ----------------
 	// Load resource fork
@@ -75,8 +75,8 @@ short FSpOpenResFile(const FSSpec* spec, char permission)
 
 	// -------------------
 	// Resource Header
-	UInt32 dataSectionOff = f.Read<UInt32>() + resForkOff;
-	UInt32 mapSectionOff = f.Read<UInt32>() + resForkOff;
+	std::streamoff dataSectionOff = f.Read<UInt32>() + resForkOff;
+	std::streamoff mapSectionOff = f.Read<UInt32>() + resForkOff;
 	f.Skip(4); // UInt32 dataSectionLen
 	f.Skip(4); // UInt32 mapSectionLen
 	f.Skip(112 + 128); // system- (112) and app- (128) reserved data
@@ -88,8 +88,8 @@ short FSpOpenResFile(const FSSpec* spec, char permission)
 	// map header
 	f.Skip(16 + 4 + 2); // junk
 	f.Skip(2); // UInt16 fileAttr
-	UInt32 typeListOff = f.Read<UInt16>() + mapSectionOff;
-	UInt32 resNameListOff = f.Read<UInt16>() + mapSectionOff;
+	std::streamoff typeListOff = f.Read<UInt16>() + mapSectionOff;
+	std::streamoff resNameListOff = f.Read<UInt16>() + mapSectionOff;
 
 	// all resource types
 	int nResTypes = 1 + f.Read<UInt16>();
@@ -97,7 +97,7 @@ short FSpOpenResFile(const FSSpec* spec, char permission)
 	{
 		OSType resType = f.Read<OSType>();
 		int    resCount = f.Read<UInt16>() + 1;
-		UInt32 resRefListOff = f.Read<UInt16>() + typeListOff;
+		std::streamoff resRefListOff = f.Read<UInt16>() + typeListOff;
 
 		// The guard will rewind the file cursor to the pos in the next iteration
 		auto guard1 = f.GuardPos();
@@ -116,7 +116,7 @@ short FSpOpenResFile(const FSSpec* spec, char permission)
 
 			// unpack attributes
 			Byte   resFlags = (resPackedAttr & 0xFF000000) >> 24;
-			UInt32 resDataOff = (resPackedAttr & 0x00FFFFFF) + dataSectionOff;
+			std::streamoff resDataOff = (resPackedAttr & 0x00FFFFFF) + dataSectionOff;
 
 			// Check compressed flag
 			ResourceAssert(!(resFlags & 1), "FSpOpenResFile: Compressed resources not supported yet");

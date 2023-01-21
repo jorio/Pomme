@@ -91,6 +91,9 @@ typedef enum
 	/// 8 bits for red, green, and blue. No alpha byte.
 	kQ3PixelTypeRGB24                           = 5,
 
+	/// 8 bits for red, green, and blue, and alpha (Pomme extension, not in real 3DMF files)
+	kQ3PixelTypeRGBA32                          = 6,
+
 	kQ3PixelTypeUnknown							= 200,
 	kQ3PixelTypeSize32                          = 0xFFFFFFFF
 } TQ3PixelType;

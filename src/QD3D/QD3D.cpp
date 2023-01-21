@@ -123,6 +123,16 @@ void Q3Pixmap_ApplyEdgePadding(TQ3Pixmap* pm)
 					pm->byteOrder==kQ3EndianNative? 0xFF000000: 0x000000FF);
 			break;
 
+		case kQ3PixelTypeRGBA32:
+			Assert(pm->rowBytes >= pm->width * 4, "EdgePadding RGBA32: incorrect rowBytes");
+			_EdgePadding<uint32_t>(
+					(uint32_t *) pm->image,
+					pm->width,
+					pm->height,
+					pm->rowBytes,
+					pm->byteOrder==kQ3EndianNative? 0x000000FF: 0xFF000000);
+			break;
+
 		case kQ3PixelTypeRGB16:
 		case kQ3PixelTypeRGB16_565:
 		case kQ3PixelTypeRGB24:

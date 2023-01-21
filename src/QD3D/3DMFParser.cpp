@@ -510,6 +510,7 @@ TQ3Pixmap* Q3MetaFileParser::ParsePixmap(uint32_t chunkType, uint32_t chunkSize)
 		case kQ3PixelTypeARGB16:	printf(" ARGB16");				break;
 		case kQ3PixelTypeRGB16_565:	printf(" RGB16_565");			break;
 		case kQ3PixelTypeRGB24:		printf(" RGB24");				break;
+		case kQ3PixelTypeRGBA32:	printf(" RGBA32");				break;
 		default:					printf(" UnknownPixelType");	break;
 	}
 #endif

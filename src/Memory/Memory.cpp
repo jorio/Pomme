@@ -19,6 +19,9 @@ static std::set<uint32_t> gLivePtrNums;
 static constexpr int kBlockDescriptorPadding = 32;
 static_assert(sizeof(BlockDescriptor) <= kBlockDescriptorPadding);
 
+static size_t gTotalHeapSize = 0;
+static size_t gNumBlocksAllocated = 0;
+
 //-----------------------------------------------------------------------------
 // Implementation-specific stuff
 
@@ -33,6 +36,9 @@ BlockDescriptor* BlockDescriptor::Allocate(uint32_t size)
 	block->ptrToData = buf + kBlockDescriptorPadding;
 	block->rezMeta = nullptr;
 
+	gTotalHeapSize += kBlockDescriptorPadding + size;
+	gNumBlocksAllocated++;
+
 #if POMME_PTR_TRACKING
 	block->ptrBatch = gCurrentPtrBatch;
 	block->ptrNumInBatch = gCurrentNumPtrsInBatch++;
@@ -46,6 +52,9 @@ void BlockDescriptor::Free(BlockDescriptor* block)
 {
 	if (!block)
 		return;
+
+	gTotalHeapSize -= kBlockDescriptorPadding + block->size;
+	gNumBlocksAllocated--;
 
 	block->magic = 'DEAD';
 	block->size = 0;
@@ -172,12 +181,8 @@ Ptr NewPtr(Size byteCount)
 	if (byteCount > 0x7FFFFFFF)
 		throw std::invalid_argument("trying to alloc massive ptr");
 
-#if !POMME_PTR_TRACKING
-	return new char[byteCount];
-#else
 	BlockDescriptor* bd = BlockDescriptor::Allocate((UInt32) byteCount);
 	return bd->ptrToData;
-#endif
 }
 
 Ptr NewPtrSys(Size byteCount)
@@ -192,17 +197,29 @@ Ptr NewPtrClear(Size byteCount)
 	return ptr;
 }
 
+Size GetPtrSize(Ptr p)
+{
+	const BlockDescriptor* block = BlockDescriptor::PtrToBlock(p);
+	return block->size;
+}
+
 void DisposePtr(Ptr p)
 {
-#if !POMME_PTR_TRACKING
-	delete[] p;
-#else
 	BlockDescriptor::Free(BlockDescriptor::PtrToBlock(p));
-#endif
 }
 
 //-----------------------------------------------------------------------------
 // Memory: pointer tracking
+
+long Pomme_GetNumAllocs()
+{
+	return (long) gNumBlocksAllocated;
+}
+
+Size Pomme_GetHeapSize()
+{
+	return (Size) gTotalHeapSize;
+}
 
 void Pomme_FlushPtrTracking(bool issueWarnings)
 {

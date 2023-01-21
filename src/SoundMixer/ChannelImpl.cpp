@@ -31,7 +31,7 @@ ChannelImpl::ChannelImpl(SndChannelPtr _macChannel, bool transferMacChannelOwner
 
 ChannelImpl::~ChannelImpl()
 {
-	Unlink();
+	Unlink();  // Unlink chan from list of managed chans
 
 	macChannel->channelImpl = nullptr;
 
@@ -39,6 +39,11 @@ ChannelImpl::~ChannelImpl()
 	{
 		delete macChannel;
 	}
+
+	// Make sure we've stopped mixing the source before we allow its destructor
+	// to be called. Otherwise, the WavSource's buffer may be freed as it is still
+	// being processed!
+	source.RemoveFromMixer();
 }
 
 void ChannelImpl::Recycle()

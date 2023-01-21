@@ -255,14 +255,27 @@ void Source::Init(int theSampleRate, int theLength)
 	Stop();
 }
 
-Source::~Source()
+void Source::RemoveFromMixer()
 {
 	gMixer.Lock();
 	if (active)
 	{
 		gMixer.sources.remove(this);
+		active = false;
 	}
 	gMixer.Unlock();
+}
+
+Source::~Source()
+{
+	if (active)
+	{
+		// You MUST call RemoveFromMixer before destroying a source. If you get here, your program is incorrect.
+		fprintf(stderr, "Source wasn't removed from mixer prior to destruction!\n");
+#if _DEBUG
+		std::terminate();
+#endif
+	}
 }
 
 void Source::Rewind()

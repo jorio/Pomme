@@ -77,6 +77,8 @@ namespace cmixer
 	public:
 		virtual ~Source();
 
+		void RemoveFromMixer();
+
 		void Clear();
 
 		void Rewind();

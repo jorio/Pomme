@@ -61,56 +61,35 @@ namespace cmixer
 		double pan;                     // Pan set by `cm_set_pan()`
 		std::function<void()> onComplete;        // Callback
 
+	private:
 		void ClearPrivate();
 
 	protected:
 		Source();
-
 		void Init(int samplerate, int length);
-
 		virtual void RewindImplementation() = 0;
-
 		virtual void ClearImplementation() = 0;
-
 		virtual void FillBuffer(int16_t* buffer, int length) = 0;
 
 	public:
 		virtual ~Source();
-
 		void RemoveFromMixer();
-
 		void Clear();
-
 		void Rewind();
-
 		void RecalcGains();
-
 		void FillBuffer(int offset, int length);
-
 		void Process(int len);
-
 		double GetLength() const;
-
 		double GetPosition() const;
-
 		int GetState() const;
-
 		void SetGain(double gain);
-
 		void SetPan(double pan);
-
 		void SetPitch(double pitch);
-
 		void SetLoop(bool loop);
-
 		void SetInterpolation(bool interpolation);
-
 		void Play();
-
 		void Pause();
-
 		void TogglePause();
-
 		void Stop();
 	};
 
@@ -124,42 +103,31 @@ namespace cmixer
 		std::vector<char> userBuffer;
 
 		void ClearImplementation() override;
-
 		void RewindImplementation() override;
-
 		void FillBuffer(int16_t* buffer, int length) override;
 
-		inline uint8_t* data8() const
-		{ return reinterpret_cast<uint8_t*>(span.data()); }
-
-		inline int16_t* data16() const
-		{ return reinterpret_cast<int16_t*>(span.data()); }
+		inline uint8_t* data8() const { return reinterpret_cast<uint8_t*>(span.data()); }
+		inline int16_t* data16() const { return reinterpret_cast<int16_t*>(span.data()); }
 
 	public:
 		WavStream();
-
-		void Init(
-			int theSampleRate,
-			int theBitDepth,
-			int nChannels,
-			bool bigEndian,
-			std::span<char> data
-		);
-
+		void Init(int theSampleRate, int theBitDepth, int nChannels, bool bigEndian, std::span<char> data);
 		std::span<char> GetBuffer(int nBytesOut);
-
 		std::span<char> SetBuffer(std::vector<char>&& data);
 	};
 
+	// Guard class that safely removes the source from the mixer when the guard object is destroyed.
+	class SourceMixGuard
+	{
+		Source& source;
+
+	public:
+		SourceMixGuard(Source& theSource) : source(theSource) {}
+		~SourceMixGuard() { source.RemoveFromMixer(); }
+	};
 
 	void InitWithSDL();
-
 	void ShutdownWithSDL();
-
 	double GetMasterGain();
-
 	void SetMasterGain(double);
-
-	WavStream LoadWAVFromFile(const char* path);
-
 }

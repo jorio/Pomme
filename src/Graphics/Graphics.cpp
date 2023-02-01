@@ -655,6 +655,9 @@ void DrawChar(char c)
 	dstRect.right  = dstRect.left + SysFont::widthBits;
 	dstRect.bottom = dstRect.top  + SysFont::rows;
 
+	// Advance pen position
+	penX += glyph.width;
+
 	Rect clippedDstRect = dstRect;
 	if (!IntersectRects(&curPort->port.portRect, &clippedDstRect))
 	{
@@ -688,6 +691,4 @@ void DrawChar(char c)
 
 		dst2 += curPort->pixels.width;
 	}
-
-	penX += glyph.width;
 }

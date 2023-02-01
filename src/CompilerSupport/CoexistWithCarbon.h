@@ -32,6 +32,7 @@
 #define GetEOF					Pomme_GetEOF
 #define GetFPos					Pomme_GetFPos
 #define GetHandleSize			Pomme_GetHandleSize
+#define GetPtrSize				Pomme_GetPtrSize
 #define GetResInfo				Pomme_GetResInfo
 #define GetResource				Pomme_GetResource
 #define GetResourceSizeOnDisk	Pomme_GetResourceSizeOnDisk

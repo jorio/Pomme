@@ -4,6 +4,7 @@
 
 #include <string>
 #include <sstream>
+#include <cstdint>
 
 #define POMME_DEBUG_MEMORY		false
 #define POMME_DEBUG_SOUND		false

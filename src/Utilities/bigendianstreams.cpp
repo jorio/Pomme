@@ -1,5 +1,6 @@
 #include "Utilities/bigendianstreams.h"
 #include "Utilities/IEEEExtended.h"
+#include <cstdint>
 
 Pomme::StreamPosGuard::StreamPosGuard(std::istream& theStream) :
 	stream(theStream)

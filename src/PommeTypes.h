@@ -6,18 +6,18 @@
 //-----------------------------------------------------------------------------
 // Integer types
 
-typedef char                            SignedByte; 
-typedef char                            SInt8;
-typedef short                           SInt16;
-typedef int                             SInt32;
-typedef long long                       SInt64;
+typedef int8_t                          SignedByte;
+typedef int8_t                          SInt8;
+typedef int16_t                         SInt16;
+typedef int32_t                         SInt32;
+typedef int64_t                         SInt64;
 
-typedef unsigned char                   Byte; 
-typedef unsigned char                   UInt8;
-typedef unsigned char                   Boolean;
-typedef unsigned short                  UInt16;
-typedef unsigned int                    UInt32;
-typedef unsigned long long              UInt64;
+typedef uint8_t                         Byte;
+typedef uint8_t                         UInt8;
+typedef uint8_t                         Boolean;
+typedef uint16_t                        UInt16;
+typedef uint32_t                        UInt32;
+typedef uint64_t                        UInt64;
 
 #if __BIG_ENDIAN__
 typedef struct { UInt32 hi, lo; } UnsignedWide;

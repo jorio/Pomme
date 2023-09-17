@@ -6,10 +6,7 @@
     typedef std::u8string u8string;
 #else
     typedef std::string u8string;
+	typedef char char8_t;
 #endif
 
-std::string UppercaseCopy(const std::string&);
-
-u8string AsU8(const std::string);
-
-std::string FromU8(const u8string);
+u8string UppercaseCopy(const u8string&);

@@ -68,9 +68,15 @@ long HostVolume::GetDirectoryID(const fs::path& dirPath)
 //-----------------------------------------------------------------------------
 // Internal utilities
 
-fs::path HostVolume::ToPath(long parID, const std::string& name)
+fs::path HostVolume::ToPath(long parID, const char* name)
 {
-	fs::path path = directories.at(parID) / AsU8(name);
+	return ToPath(parID, u8string((const char8_t*)name));
+}
+
+fs::path HostVolume::ToPath(long parID, const u8string& name)
+{
+	fs::path path = directories.at(parID);
+	path /= name;
 	return path.lexically_normal();
 }
 
@@ -161,12 +167,9 @@ OSErr HostVolume::OpenFork(const FSSpec* spec, ForkType forkType, char permissio
 	return noErr;
 }
 
-static bool CaseInsensitiveAppendToPath(
-	fs::path& path,
-	const std::string& element,
-	bool skipFiles = false)
+static bool CaseInsensitiveAppendToPath(fs::path& path, const u8string& element, bool skipFiles = false)
 {
-	fs::path naiveConcat = path / AsU8(element);
+	fs::path naiveConcat = path / element;
 
 	if (!fs::exists(path))
 	{
@@ -199,11 +202,7 @@ static bool CaseInsensitiveAppendToPath(
 		}
 
 		// Convert candidate filename to uppercase for case-insensitive comparison
-#if LEGACY_FILESYSTEM_IMPLEMENTATION  // ghc::path::u8string returns an std::string
-		const std::string uppercaseCandidateFilename = UppercaseCopy(candidateFilename.u8string());
-#else // C++20
-		const std::string uppercaseCandidateFilename = UppercaseCopy(FromU8(candidateFilename.u8string()));
-#endif
+		const u8string uppercaseCandidateFilename = UppercaseCopy(candidateFilename.u8string());
 
 		if (uppercaseElement == uppercaseCandidateFilename)
 		{
@@ -219,7 +218,7 @@ static bool CaseInsensitiveAppendToPath(
 //-----------------------------------------------------------------------------
 // Implementation
 
-OSErr HostVolume::FSMakeFSSpec(long dirID, const std::string& fileName, FSSpec* spec)
+OSErr HostVolume::FSMakeFSSpec(long dirID, const u8string& fileName, FSSpec* spec)
 {
 	if (dirID < 0 || (unsigned long) dirID >= directories.size())
 	{
@@ -231,12 +230,12 @@ OSErr HostVolume::FSMakeFSSpec(long dirID, const std::string& fileName, FSSpec* 
 
 	// Case-insensitive sanitization
 	bool exists = fs::exists(path);
-	std::string::size_type begin = (suffix.at(0) == ':') ? 1 : 0;
+	u8string::size_type begin = (suffix.at(0) == ':') ? 1 : 0;
 
 	// Iterate on path elements between colons
 	while (begin < suffix.length())
 	{
-		auto end = suffix.find(":", begin);
+		auto end = suffix.find(':', begin);
 
 		bool isLeaf = end == std::string::npos; // no ':' found => end of path
 		if (isLeaf) end = suffix.length();
@@ -264,7 +263,7 @@ OSErr HostVolume::FSMakeFSSpec(long dirID, const std::string& fileName, FSSpec* 
 	return exists ? noErr : fnfErr;
 }
 
-OSErr HostVolume::DirCreate(long parentDirID, const std::string& directoryName, long* createdDirID)
+OSErr HostVolume::DirCreate(long parentDirID, const u8string& directoryName, long* createdDirID)
 {
 	const auto path = ToPath(parentDirID, directoryName);
 

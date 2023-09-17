@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include "Utilities/StringUtils.h"
 
 namespace Pomme::Files
 {
@@ -48,7 +49,7 @@ namespace Pomme::Files
 		//-----------------------------------------------------------------------------
 		// Toolbox API Implementation
 
-		virtual OSErr FSMakeFSSpec(long dirID, const std::string& suffix, FSSpec* spec) = 0;
+		virtual OSErr FSMakeFSSpec(long dirID, const u8string& suffix, FSSpec* spec) = 0;
 
 		virtual OSErr OpenFork(const FSSpec* spec, ForkType forkType, char permission, std::unique_ptr<ForkHandle>& handle) = 0;
 
@@ -56,6 +57,6 @@ namespace Pomme::Files
 
 		virtual OSErr FSpDelete(const FSSpec* spec) = 0;
 
-		virtual OSErr DirCreate(long parentDirID, const std::string& directoryName, long* createdDirID) = 0;
+		virtual OSErr DirCreate(long parentDirID, const u8string& directoryName, long* createdDirID) = 0;
 	};
 }

@@ -268,8 +268,9 @@ SndListHandle Pomme_SndLoadFileAsResource(short fRefNum)
 	auto& spec = Pomme::Files::GetSpec(fRefNum);
 	auto& stream = Pomme::Files::GetStream(fRefNum);
 
-	std::string fileName = UppercaseCopy(spec.cName);
-	fs::path extension = fs::path(AsU8(fileName)).extension();
+	u8string fileName((const char8_t*) spec.cName);
+	fileName = UppercaseCopy(fileName);
+	fs::path extension = fs::path(fileName).extension();
 
 	// Guess media container from extension
 	if (extension == ".AIFF"

@@ -2,6 +2,7 @@
 
 #include "Files/Volume.h"
 #include "CompilerSupport/filesystem.h"
+#include "Utilities/StringUtils.h"
 #include <vector>
 
 namespace Pomme::Files
@@ -14,7 +15,8 @@ namespace Pomme::Files
 	{
 		std::vector<fs::path> directories;
 
-		fs::path ToPath(long parID, const std::string& name);
+		fs::path ToPath(long parID, const char* name);
+		fs::path ToPath(long parID, const u8string& name);
 
 	public:
 		explicit HostVolume(short vRefNum);
@@ -31,7 +33,7 @@ namespace Pomme::Files
 		//-----------------------------------------------------------------------------
 		// Toolbox API Implementation
 
-		OSErr FSMakeFSSpec(long dirID, const std::string& fileName, FSSpec* spec) override;
+		OSErr FSMakeFSSpec(long dirID, const u8string& fileName, FSSpec* spec) override;
 
 		OSErr OpenFork(const FSSpec* spec, ForkType forkType, char permission, std::unique_ptr<ForkHandle>& stream) override;
 
@@ -39,6 +41,6 @@ namespace Pomme::Files
 
 		OSErr FSpDelete(const FSSpec* spec) override;
 
-		OSErr DirCreate(long parentDirID, const std::string& directoryName, long* createdDirID) override;
+		OSErr DirCreate(long parentDirID, const u8string& directoryName, long* createdDirID) override;
 	};
 }

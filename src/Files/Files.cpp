@@ -112,7 +112,9 @@ OSErr FSMakeFSSpec(short vRefNum, long dirID, const char* cstrFileName, FSSpec* 
 	if (!IsVolumeLegal(vRefNum))
 		return nsvErr;
 
-	return volumes.at(vRefNum)->FSMakeFSSpec(dirID, cstrFileName, spec);
+	u8string fileName((const char8_t*)cstrFileName);
+
+	return volumes.at(vRefNum)->FSMakeFSSpec(dirID, fileName, spec);
 }
 
 static OSErr OpenFork(const FSSpec* spec, ForkType forkType, char permission, short* refNum)
@@ -165,7 +167,7 @@ OSErr FindFolder(short vRefNum, OSType folderType, Boolean createFolder, short* 
 		throw std::runtime_error("FindFolder only supports kOnSystemDisk");
 	}
 
-	fs::path path;
+	fs::path path = "";
 
 	switch (folderType)
 	{
@@ -175,7 +177,8 @@ OSErr FindFolder(short vRefNum, OSType folderType, Boolean createFolder, short* 
 		path = Pomme::Platform::Windows::GetPreferencesFolder();
 #elif defined(__APPLE__)
 		const char *home = getenv("HOME");
-		if (!home) {
+		if (!home)
+		{
 			return fnfErr;
 		}
 		path = fs::path(home) / "Library" / "Preferences";
@@ -203,6 +206,11 @@ OSErr FindFolder(short vRefNum, OSType folderType, Boolean createFolder, short* 
 		return fnfErr;
 	}
 
+	if (path.empty())
+	{
+		return fnfErr;
+	}
+
 	path = path.lexically_normal();
 
 	bool exists = fs::exists(path);
@@ -223,9 +231,15 @@ OSErr FindFolder(short vRefNum, OSType folderType, Boolean createFolder, short* 
 
 OSErr DirCreate(short vRefNum, long parentDirID, const char* cstrDirectoryName, long* createdDirID)
 {
-	return IsVolumeLegal(vRefNum)
-		? volumes.at(vRefNum)->DirCreate(parentDirID, cstrDirectoryName, createdDirID)
-		: (OSErr)nsvErr;
+	if (!IsVolumeLegal(vRefNum))
+	{
+		return (OSErr)nsvErr;
+	}
+
+	u8string directoryName((const char8_t*)cstrDirectoryName);
+
+	const auto& volume = volumes.at(vRefNum);
+	return volume->DirCreate(parentDirID, directoryName, createdDirID);
 }
 
 OSErr FSpCreate(const FSSpec* spec, OSType creator, OSType fileType, ScriptCode scriptTag)

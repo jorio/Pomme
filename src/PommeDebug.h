@@ -6,13 +6,33 @@
 #include <sstream>
 #include <cstdint>
 
-#define POMME_DEBUG_MEMORY		false
-#define POMME_DEBUG_SOUND		false
-#define POMME_DEBUG_PICT		false
-#define POMME_DEBUG_FILES		false
-#define POMME_DEBUG_RESOURCES	false
-#define POMME_DEBUG_INPUT		false
-#define POMME_DEBUG_3DMF		false
+#if !defined(POMME_DEBUG_MEMORY)
+#define POMME_DEBUG_MEMORY		0
+#endif
+
+#if !defined(POMME_DEBUG_SOUND)
+#define POMME_DEBUG_SOUND		0
+#endif
+
+#if !defined(POMME_DEBUG_PICT)
+#define POMME_DEBUG_PICT		0
+#endif
+
+#if !defined(POMME_DEBUG_FILES)
+#define POMME_DEBUG_FILES		0
+#endif
+
+#if !defined(POMME_DEBUG_RESOURCES)
+#define POMME_DEBUG_RESOURCES	0
+#endif
+
+#if !defined(POMME_DEBUG_INPUT)
+#define POMME_DEBUG_INPUT		0
+#endif
+
+#if !defined(POMME_DEBUG_3DMF)
+#define POMME_DEBUG_3DMF		0
+#endif
 
 #define POMME_GENLOG(define, prefix) if (!define) {} else std::cout << "[" << prefix << "] " << __func__ << ":\t"
 #define POMME_GENLOG_NOPREFIX(define) if (!define) {} else std::cout

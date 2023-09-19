@@ -183,6 +183,18 @@ static bool CaseInsensitiveAppendToPath(fs::path& path, const u8string& element,
 		return true;
 	}
 
+#if POMME_CASE_SENSITIVE_FSSPEC
+	if (!skipFiles)
+	{
+		fs::path candidateResourcePath = naiveConcat;
+		candidateResourcePath += ".rsrc";
+		if (fs::is_regular_file(candidateResourcePath))
+		{
+			path = naiveConcat;
+			return true;
+		}
+	}
+#else
 	// Convert path element to uppercase for case-insensitive comparisons
 	const auto uppercaseElement = UppercaseCopy(element);
 
@@ -210,6 +222,7 @@ static bool CaseInsensitiveAppendToPath(fs::path& path, const u8string& element,
 			return true;
 		}
 	}
+#endif
 
 	path = naiveConcat;
 	return false;

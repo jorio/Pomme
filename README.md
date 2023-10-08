@@ -10,6 +10,7 @@ The goal isn't to achieve 100% source compatibility with old Mac C programs, but
 
 - [Billy Frontier](https://github.com/jorio/BillyFrontier)
 - [Bugdom](https://github.com/jorio/Bugdom)
+- [Bugdom 2](https://github.com/jorio/Bugdom2)
 - [Cro-Mag Rally](https://github.com/jorio/CroMagRally)
 - [Mighty Mike](https://github.com/jorio/MightyMike)
 - [Nanosaur](https://github.com/jorio/Nanosaur)

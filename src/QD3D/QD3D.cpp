@@ -232,9 +232,9 @@ void Q3TriMeshData_SubdivideTriangles(TQ3TriMeshData* mesh)
 {
 	struct Edge
 	{
-		int a;
-		int b;
-		int midpoint;
+		uint32_t a;
+		uint32_t b;
+		uint32_t midpoint;
 	};
 
 	std::map<uint32_t, Edge> edges;
@@ -254,8 +254,8 @@ void Q3TriMeshData_SubdivideTriangles(TQ3TriMeshData* mesh)
 
 		for (int e = 0; e < 3; e++)
 		{
-			int edgeP0 = triangle.pointIndices[e];
-			int edgeP1 = triangle.pointIndices[(e+1) % 3];
+			uint32_t edgeP0 = triangle.pointIndices[e];
+			uint32_t edgeP1 = triangle.pointIndices[(e+1) % 3];
 			if (edgeP0 > edgeP1)
 			{
 				int swap = edgeP0;
@@ -271,7 +271,7 @@ void Q3TriMeshData_SubdivideTriangles(TQ3TriMeshData* mesh)
 			}
 			else
 			{
-				edges[edgeHash] = { edgeP0, edgeP1, -1 };
+				edges[edgeHash] = { edgeP0, edgeP1, (uint32_t) -1 };
 				triangleEdges[t*3 + e] = &edges[edgeHash];
 				numDistinctEdges++;
 			}
@@ -305,9 +305,9 @@ void Q3TriMeshData_SubdivideTriangles(TQ3TriMeshData* mesh)
 		edge.midpoint = numPointsWritten;
 		numPointsWritten++;
 
-		int M = edge.midpoint;
-		int A = edge.a;
-		int B = edge.b;
+		uint32_t M = edge.midpoint;
+		uint32_t A = edge.a;
+		uint32_t B = edge.b;
 
 		mesh->points[M].x = (mesh->points[A].x + mesh->points[B].x) / 2.0f;
 		mesh->points[M].y = (mesh->points[A].y + mesh->points[B].y) / 2.0f;
@@ -353,12 +353,12 @@ void Q3TriMeshData_SubdivideTriangles(TQ3TriMeshData* mesh)
 		   A        ^        C
 		*/
 
-		uint16_t A		= triangle.pointIndices[0];
-		uint16_t B		= triangle.pointIndices[1];
-		uint16_t C		= triangle.pointIndices[2];
-		uint16_t A2B	= triangleEdges[t*3 + 0]->midpoint;
-		uint16_t B2C	= triangleEdges[t*3 + 1]->midpoint;
-		uint16_t C2A	= triangleEdges[t*3 + 2]->midpoint;
+		uint32_t A		= triangle.pointIndices[0];
+		uint32_t B		= triangle.pointIndices[1];
+		uint32_t C		= triangle.pointIndices[2];
+		uint32_t A2B	= triangleEdges[t*3 + 0]->midpoint;
+		uint32_t B2C	= triangleEdges[t*3 + 1]->midpoint;
+		uint32_t C2A	= triangleEdges[t*3 + 2]->midpoint;
 
 		mesh->triangles[numTrianglesWritten++]	= {{A2B, B, B2C} };
 		mesh->triangles[numTrianglesWritten++]	= {{B2C, C, C2A} };

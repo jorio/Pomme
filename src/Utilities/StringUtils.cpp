@@ -3,9 +3,9 @@
 #include <algorithm>
 #include <iterator>
 
-std::u8string UppercaseCopy(const u8string& in)
+u8string UppercaseCopy(const u8string& in)
 {
-	std::u8string out;
+	u8string out;
 	std::transform(
 		in.begin(),
 		in.end(),

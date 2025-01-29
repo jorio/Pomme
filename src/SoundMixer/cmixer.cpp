@@ -24,8 +24,9 @@
 
 #include "cmixer.h"
 #include "Utilities/structpack.h"
-#include <SDL.h>
+#include <SDL3/SDL.h>
 
+#include <cstring>
 #include <vector>
 #include <fstream>
 #include <list>
@@ -50,16 +51,17 @@ using namespace cmixer;
 
 static struct Mixer
 {
-	SDL_mutex* sdlAudioMutex;
+	SDL_Mutex* sdlAudioMutex;
 
 	std::list<Source*> sources;   // Linked list of active (playing) sources
 	int32_t pcmmixbuf[BUFFER_SIZE]; // Internal master buffer
+	int16_t pcmclipbuf[BUFFER_SIZE]; // Internal clip buffer
 	int samplerate;               // Master samplerate
 	int gain;                     // Master gain (fixed point)
 
 	void Init(int samplerate);
 
-	void Process(int16_t* dst, int len);
+	void Process(SDL_AudioStream* stream, int len);
 
 	void Lock();
 
@@ -74,39 +76,71 @@ static struct Mixer
 static bool sdlAudioSubSystemInited = false;
 static SDL_AudioDeviceID sdlDeviceID = 0;
 
+static void SDLCALL AudioCallback(void *userData, SDL_AudioStream *stream, int additionalAmount, int totalAmount)
+{
+	(void) totalAmount;
+	(void) userData;
+
+	// Calculate a little more audio here, write it to `stream`
+	if (additionalAmount > 0)
+	{
+		gMixer.Process(stream, additionalAmount / 2);
+	}
+}
+
+// SDL2 used to offer SDL_AUDIO_ALLOW_FREQUENCY_CHANGE to avoid crackles and
+// pops if the hardware doesn't work at the exact frequency we've asked for
+// (typically we'd ask for 44100 and get back 48000).
+// I couldn't find an equivalent to SDL_AUDIO_ALLOW_FREQUENCY_CHANGE in SDL3.
+// So, use this function before opening the audio device to query the hardware
+// for its preferred frequency (sample rate).
+static int GetHardwareFrequency(void)
+{
+	SDL_AudioStream* stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, NULL, NULL, NULL);
+	if (!stream)
+		throw std::runtime_error(SDL_GetError());
+
+	SDL_AudioSpec spec;
+	bool success = SDL_GetAudioStreamFormat(stream, NULL, &spec);
+	if (!success)
+		throw std::runtime_error(SDL_GetError());
+
+	sdlDeviceID = SDL_GetAudioStreamDevice(stream);
+	if (!sdlDeviceID)
+		throw std::runtime_error("invalid audio stream device");
+	SDL_CloseAudioDevice(sdlDeviceID);
+
+	return spec.freq;
+}
+
 void cmixer::InitWithSDL()
 {
 	if (sdlAudioSubSystemInited)
 		throw std::runtime_error("SDL audio subsystem already inited");
 
-	if (0 != SDL_InitSubSystem(SDL_INIT_AUDIO))
+	if (!SDL_InitSubSystem(SDL_INIT_AUDIO))
 		throw std::runtime_error("couldn't init SDL audio subsystem");
 
 	sdlAudioSubSystemInited = true;
 
 	// Init SDL audio
-	SDL_AudioSpec fmt = {};
-	fmt.freq = 44100;
-	fmt.format = AUDIO_S16SYS;
-	fmt.channels = 2;
-	fmt.samples = 1024;
-	fmt.callback = [](void* udata, Uint8* stream, int size)
-	{
-		(void) udata;
-		gMixer.Process((int16_t*) stream, size / 2);
-	};
+	SDL_AudioSpec spec = {.format=SDL_AUDIO_S16, .channels=2, .freq=GetHardwareFrequency()};
 
-	SDL_AudioSpec got;
-	sdlDeviceID = SDL_OpenAudioDevice(NULL, 0, &fmt, &got, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE);
-	if (!sdlDeviceID)
+	SDL_AudioStream* stream = SDL_OpenAudioDeviceStream(
+				SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK,
+				&spec,
+				AudioCallback,
+				nullptr);
+	if (!stream)
 		throw std::runtime_error(SDL_GetError());
+	sdlDeviceID = SDL_GetAudioStreamDevice(stream);
 
 	// Init library
-	gMixer.Init(got.freq);
+	gMixer.Init(spec.freq);
 	gMixer.SetMasterGain(0.5);
 
 	// Start audio
-	SDL_PauseAudioDevice(sdlDeviceID, 0);
+	SDL_ResumeAudioDevice(sdlDeviceID);
 }
 
 void cmixer::ShutdownWithSDL()
@@ -166,13 +200,12 @@ void Mixer::SetMasterGain(double newGain)
 	gain = (int) FX_FROM_FLOAT(newGain);
 }
 
-void Mixer::Process(int16_t* dst, int len)
+void Mixer::Process(SDL_AudioStream* stream, int len)
 {
 	// Process in chunks of BUFFER_SIZE if `len` is larger than BUFFER_SIZE
 	while (len > BUFFER_SIZE)
 	{
-		Process(dst, BUFFER_SIZE);
-		dst += BUFFER_SIZE;
+		Process(stream, BUFFER_SIZE);
 		len -= BUFFER_SIZE;
 	}
 
@@ -202,8 +235,11 @@ void Mixer::Process(int16_t* dst, int len)
 	for (int i = 0; i < len; i++)
 	{
 		int x = (pcmmixbuf[i] * gain) >> FX_BITS;
-		dst[i] = CLAMP(x, -32768, 32767);
+		pcmclipbuf[i] = CLAMP(x, -32768, 32767);
 	}
+
+	// Feed SDL audio stream
+	SDL_PutAudioStreamData(stream, pcmclipbuf, len * 2);
 }
 
 //-----------------------------------------------------------------------------

@@ -120,16 +120,16 @@ endif()
 
 add_library(${PROJECT_NAME} ${POMME_SOURCES})
 
-find_package(SDL2 REQUIRED)
+# Input and SoundManager require SDL3.
+# Linking with SDL3 will also expose its include directory to us.
+if (NOT POMME_NO_INPUT OR NOT POMME_NO_SOUND_MIXER)
+	find_package(SDL3 REQUIRED)
+	target_link_libraries(${PROJECT_NAME} PUBLIC SDL3::SDL3)
+endif()
 
-add_compile_definitions(
-	"$<$<CONFIG:DEBUG>:_DEBUG>"
-)
+add_compile_definitions("$<$<CONFIG:DEBUG>:_DEBUG>")
 
-target_include_directories(${PROJECT_NAME} PRIVATE
-	${SDL2_INCLUDE_DIRS}
-	${POMME_SRCDIR}
-)
+target_include_directories(${PROJECT_NAME} PRIVATE ${POMME_SRCDIR})
 
 if(MSVC)
 	# By default, MSVC may add /EHsc to CMAKE_CXX_FLAGS, which we don't want (we use /EHs below)

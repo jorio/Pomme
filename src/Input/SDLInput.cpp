@@ -3,8 +3,8 @@
 #include "Pomme.h"
 #include "PommeInput.h"
 
-#include <SDL_events.h>
-#include <SDL_keyboard.h>
+#include <SDL3/SDL_events.h>
+#include <SDL3/SDL_keyboard.h>
 
 //-----------------------------------------------------------------------------
 // Input
@@ -157,7 +157,7 @@ void GetKeys(KeyMap km)
 
 	SDL_PumpEvents();
 	int numkeys = 0;
-	const UInt8* keystate = SDL_GetKeyboardState(&numkeys);
+	const bool* keystate = SDL_GetKeyboardState(&numkeys);
 
 	numkeys = std::min((int) sizeof(scancodeLookupTable), numkeys);
 
@@ -181,11 +181,11 @@ void GetKeys(KeyMap km)
 
 void GetMouse(Point* mouseLoc)
 {
-	int x;
-	int y;
+	float x;
+	float y;
 	SDL_GetMouseState(&x, &y);
-	mouseLoc->h = x;
-	mouseLoc->v = y;
+	mouseLoc->h = (int) x;
+	mouseLoc->v = (int) y;
 }
 
 Boolean Button(void)
@@ -198,17 +198,17 @@ Boolean Button(void)
 
 void InitCursor()
 {
-	SDL_ShowCursor(1);
+	SDL_ShowCursor();
 }
 
 void HideCursor()
 {
-	SDL_ShowCursor(0);
+	SDL_HideCursor();
 }
 
 void ShowCursor()
 {
-	SDL_ShowCursor(1);
+	SDL_ShowCursor();
 }
 
 //-----------------------------------------------------------------------------

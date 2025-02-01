@@ -129,7 +129,11 @@ endif()
 
 add_compile_definitions("$<$<CONFIG:DEBUG>:_DEBUG>")
 
-target_include_directories(${PROJECT_NAME} PRIVATE ${POMME_SRCDIR})
+target_include_directories(${PROJECT_NAME} PUBLIC ${POMME_SRCDIR})
+
+if (NOT POMME_NO_QD3D)
+	target_include_directories(${PROJECT_NAME} PUBLIC ${POMME_SRCDIR}/QD3D)
+endif()
 
 if(MSVC)
 	# By default, MSVC may add /EHsc to CMAKE_CXX_FLAGS, which we don't want (we use /EHs below)

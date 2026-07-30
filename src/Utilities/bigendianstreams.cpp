@@ -63,6 +63,11 @@ std::string Pomme::BigEndianIStream::ReadPascalString_FixedLengthRecord(const in
 	int length = Read<uint8_t>();
 	char buf[256];
 	stream.read(buf, maxChars);
+	// The length byte is attacker-controlled (0..255) but we only read
+	// maxChars bytes into buf; clamp so we never return uninitialized stack
+	// beyond what was actually read.
+	if (length > maxChars)
+		length = maxChars;
 	return std::string(buf, length);
 }
 

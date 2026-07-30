@@ -227,10 +227,10 @@ static ARGBPixmap Unpack4(BigEndianIStream& f, int w, int h, UInt16 rowbytes, in
 		{
 			for (int x = 0; x < w; x++)
 			{
-				dst.data.push_back(unpacked[y*w*3 + x + w*0]); // alpha
-				dst.data.push_back(unpacked[y*w*3 + x + w*1]); // red
-				dst.data.push_back(unpacked[y*w*3 + x + w*2]); // grn
-				dst.data.push_back(unpacked[y*w*3 + x + w*3]); // blu
+				dst.data.push_back(unpacked[y*w*4 + x + w*0]); // alpha
+				dst.data.push_back(unpacked[y*w*4 + x + w*1]); // red
+				dst.data.push_back(unpacked[y*w*4 + x + w*2]); // grn
+				dst.data.push_back(unpacked[y*w*4 + x + w*3]); // blu
 			}
 		}
 	}

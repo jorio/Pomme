@@ -144,6 +144,11 @@ static std::streampos GetSoundInfoFromAIFF(std::istream& input, Pomme::Sound::Sa
 			// sampled sound data is here
 			sampledSoundDataOffset = f.Tell();
 
+			// ckSize covers an 8-byte offset/blockSize header that we just
+			// consumed; a malformed chunk declaring ckSize < 8 would make
+			// ssndSize negative and later drive a huge allocation/copy.
+			AIFFAssert(ckSize >= 8, "AIFF: SSND chunk too small");
+
 			const int ssndSize = ckSize - 8;
 
 			info.compressedLength = ssndSize;

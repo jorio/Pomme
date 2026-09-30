@@ -2,7 +2,7 @@
 #include <algorithm>
 #include <stdexcept>
 
-static int Unpack(const char* format, char* buffer)
+static int Unpack(const char* format, char* buffer, bool swapBytes = true)
 {
 	int totalBytes = 0;
 	int repeat = 0;
@@ -68,7 +68,7 @@ static int Unpack(const char* format, char* buffer)
 		if (!repeat)
 			repeat = 1;
 
-		bool doSwap = fieldLength > 1;
+		bool doSwap = swapBytes && fieldLength > 1;
 
 		if (buffer)
 		{
@@ -100,6 +100,32 @@ int ByteswapStructs(const char* format, int structSize, int structCount, void* b
 	for (int i = 0; i < structCount; i++)
 	{
 		int newSize = Unpack(format, byteBuffer);
+		byteBuffer += newSize;
+		totalBytes += newSize;
+	}
+	if (totalBytes != structSize * structCount)
+	{
+		throw std::invalid_argument("unexpected length after byteswap");
+	}
+	return totalBytes;
+}
+
+int UnpackStructs(const char* format, int structSize, int structCount, void* buffer)
+{
+	if (!format || (format[0] != '<' && format[0] != '>'))
+	{
+		throw std::invalid_argument("first format char must be endianness indicator");
+	}
+#if __BIG_ENDIAN__
+	const bool swapBytes = format[0] == '<';
+#else
+	const bool swapBytes = format[0] == '>';
+#endif
+	char* byteBuffer = (char*) buffer;
+	int totalBytes = 0;
+	for (int i = 0; i < structCount; i++)
+	{
+		int newSize = Unpack(format + 1, byteBuffer, swapBytes);
 		byteBuffer += newSize;
 		totalBytes += newSize;
 	}

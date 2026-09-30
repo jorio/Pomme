@@ -258,6 +258,20 @@ OSErr SndDoImmediate(SndChannelPtr chan, const SndCommand* cmd)
 		impl.ApplyParametersToSource(kApplyParameters_Loop);
 		break;
 
+	case pommePausePlaybackCmd:
+		if (impl.source.state == cmixer::CM_STATE_PLAYING)
+		{
+			impl.source.Pause();
+		}
+		break;
+
+	case pommeResumePlaybackCmd:
+		if (impl.source.state == cmixer::CM_STATE_PAUSED)
+		{
+			impl.source.Play();
+		}
+		break;
+
 	default:
 		TODOMINOR2(cmd->cmd << "(" << cmd->param1 << "," << cmd->param2 << ")");
 	}

@@ -24,6 +24,12 @@
 #define nil NULL
 
 #ifdef __cplusplus
+#define POMME_NORETURN [[ noreturn ]]
+#else
+#define POMME_NORETURN _Noreturn
+#endif
+
+#ifdef __cplusplus
 extern "C"
 {
 #endif
@@ -299,7 +305,7 @@ void RestoreDeviceClut(GDHandle gdh);
 //-----------------------------------------------------------------------------
 // Misc
 
-void ExitToShell();
+POMME_NORETURN void ExitToShell();
 
 void SysBeep(short duration);
 
@@ -418,6 +424,9 @@ Ptr NewPtrSys(Size);
 Ptr NewPtrClear(Size);
 
 void DisposePtr(Ptr p);
+
+long Pomme_GetNumAllocs(void);
+Size Pomme_GetHeapSize(void);
 
 //-----------------------------------------------------------------------------
 // Memory: pointer tracking

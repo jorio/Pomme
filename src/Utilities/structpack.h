@@ -25,6 +25,13 @@ extern "C" {
 #endif
 
 int ByteswapStructs(const char* format, int structSize, int structCount, void* buffer);
+int UnpackStructs(const char* format, int structSize, int structCount, void* buffer);
+
+static inline int16_t UnpackI16LE(const void* data)
+{
+	const uint8_t* p = (const uint8_t*) data;
+	return (int16_t) ((uint16_t)p[0] | ((uint16_t)p[1] << 8));
+}
 
 int ByteswapInts(int intSize, int intCount, void* buffer);
 

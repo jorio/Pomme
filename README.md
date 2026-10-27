@@ -17,6 +17,12 @@ The goal isn't to achieve 100% source compatibility with old Mac C programs, but
 - [Nanosaur 2](https://github.com/jorio/Nanosaur2)
 - [Otto Matic](https://github.com/jorio/OttoMatic)
 
+## CMake integration
+
+When using `add_subdirectory` to embed Pomme, a parent project can provide an `SDL3::SDL3` target before adding Pomme. Pomme reuses that target; otherwise, it locates SDL3 with `find_package(SDL3 REQUIRED)`.
+
+SDL3 is only required when input or the sound mixer is enabled. Set both `POMME_NO_INPUT` and `POMME_NO_SOUND_MIXER` to `ON` to build without SDL3.
+
 ## License
 
 Please see [LICENSE.md](LICENSE.md)

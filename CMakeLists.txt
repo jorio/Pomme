@@ -123,7 +123,9 @@ add_library(${PROJECT_NAME} ${POMME_SOURCES})
 # Input and SoundManager require SDL3.
 # Linking with SDL3 will also expose its include directory to us.
 if (NOT POMME_NO_INPUT OR NOT POMME_NO_SOUND_MIXER)
-	find_package(SDL3 REQUIRED)
+	if (NOT TARGET SDL3::SDL3)
+		find_package(SDL3 REQUIRED)
+	endif()
 	target_link_libraries(${PROJECT_NAME} PUBLIC SDL3::SDL3)
 endif()
 

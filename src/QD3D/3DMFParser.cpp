@@ -51,7 +51,7 @@ uint32_t Q3MetaFileParser::Parse1Chunk()
 	//-----------------------------------------------------------
 	// Get current chunk offset, type, size
 
-	uint32_t chunkOffset	= f.Tell();
+	uint32_t chunkOffset	= (uint32_t)f.Tell();
 	uint32_t chunkType		= f.Read<uint32_t>();
 	uint32_t chunkSize		= f.Read<uint32_t>();
 

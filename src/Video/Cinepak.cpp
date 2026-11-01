@@ -250,7 +250,7 @@ void cinepak_decode_strip (
 			throw CinepakException("invalid data");
 
 		data      += 4;
-		chunk_size = ((data + chunk_size) > eod) ? (eod - data) : chunk_size;
+		chunk_size = ((data + chunk_size) > eod) ? (int)(eod - data) : chunk_size;
 
 		switch (chunk_id) {
 
@@ -338,7 +338,7 @@ static void cinepak_decode (CinepakContext *s)
 		if (strip_size < 0)
 			throw CinepakException("invalid data");
 		s->data   += 12;
-		strip_size = ((s->data + strip_size) > eod) ? (eod - s->data) : strip_size;
+		strip_size = ((s->data + strip_size) > eod) ? static_cast<int>(eod - s->data) : strip_size;
 
 		if ((i > 0) && !(frame_flags & 0x01)) {
 			memcpy (s->strips[i].v4_codebook, s->strips[i-1].v4_codebook,

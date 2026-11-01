@@ -40,7 +40,10 @@ static void ResourceAssert(bool condition, const char* message)
 
 static ResourceFork& GetCurRF()
 {
-	return gResForkStack[gResForkStackIndex];
+	// .at() throws std::out_of_range (instead of hard-aborting via operator[]'s
+	// bounds hardening) when no resource fork is open, so callers like
+	// Count1Resources can catch it and degrade gracefully.
+	return gResForkStack.at(gResForkStackIndex);
 }
 
 //-----------------------------------------------------------------------------

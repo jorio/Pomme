@@ -160,6 +160,23 @@ OSErr FSOpen(const char* cName, short vRefNum, short* refNum)
 	return FSpOpenDF(&spec, fsRdPerm, refNum);
 }
 
+OSErr FSMakeFSSpecFromHostPath(const char* hostPath, FSSpec* spec)
+{
+	if (!IsVolumeLegal(0))
+		return nsvErr;
+
+	auto* hostVolume = dynamic_cast<HostVolume*>(volumes.at(0).get());
+	if (!hostVolume)
+		return nsvErr;
+
+	// Existence isn't checked here: callers may be building a spec for a
+	// resource fork, whose actual on-disk sidecar file (<name>.rsrc) is
+	// resolved and validated later by OpenFork, not by the bare path.
+	*spec = hostVolume->ToFSSpec(fs::path((const char8_t*)hostPath));
+
+	return noErr;
+}
+
 OSErr FindFolder(short vRefNum, OSType folderType, Boolean createFolder, short* foundVRefNum, long* foundDirID)
 {
 	if (vRefNum != kOnSystemDisk)

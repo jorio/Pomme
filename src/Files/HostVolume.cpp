@@ -88,7 +88,7 @@ FSSpec HostVolume::ToFSSpec(const fs::path& fullPath)
 	FSSpec spec;
 	spec.vRefNum = volumeID;
 	spec.parID = GetDirectoryID(parentPath);
-	snprintf(spec.cName, 256, "%s", (const char*) fullPath.filename().u8string().c_str());
+	snprintf((char*) spec.cName, 256, "%s", (const char*) fullPath.filename().u8string().c_str());
 	return spec;
 }
 
@@ -133,7 +133,7 @@ OSErr HostVolume::OpenFork(const FSSpec* spec, ForkType forkType, char permissio
 		return unimpErr;
 	}
 
-	auto path = ToPath(spec->parID, spec->cName);
+	auto path = ToPath(spec->parID, (const char8_t*) spec->cName);
 
 	if (forkType == DataFork)
 	{
@@ -319,7 +319,7 @@ OSErr HostVolume::FSpCreate(const FSSpec* spec, OSType creator, OSType fileType,
 	(void) fileType;
 	(void) scriptTag;
 
-	std::ofstream df(ToPath(spec->parID, spec->cName));
+	std::ofstream df(ToPath(spec->parID, (const char8_t*) spec->cName));
 	df.close();
 	// TODO: we could write an AppleDouble file to save the creator/filetype.
 	return noErr;
@@ -327,7 +327,7 @@ OSErr HostVolume::FSpCreate(const FSSpec* spec, OSType creator, OSType fileType,
 
 OSErr HostVolume::FSpDelete(const FSSpec* spec)
 {
-	auto path = ToPath(spec->parID, spec->cName);
+	auto path = ToPath(spec->parID, (const char8_t*) spec->cName);
 
 	if (fs::remove(path))
 		return noErr;

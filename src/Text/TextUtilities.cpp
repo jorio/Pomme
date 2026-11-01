@@ -1,20 +1,31 @@
 #include "Pomme.h"
 #include "PommeTypes.h"
+#include "PommeEnums.h"
 #include "PommeDebug.h"
 
 #include <cstring>
 #include <Utilities/memstream.h>
 #include <Utilities/bigendianstreams.h>
 
+#define kTextEncodingMacRoman       0
+
+UInt32 GetApplicationTextEncoding(void)
+{
+	// Return MacRoman as the default encoding for classic Mac apps.
+	// This is appropriate for most Western applications and is the most
+	// common encoding used in Resource Manager resources.
+	return kTextEncodingMacRoman;
+}
+
 void NumToString(long theNum, Str255 theString)
 {
-	int rc = snprintf(theString+1, 254, "%ld", theNum);
+	int rc = snprintf((char*)(theString+1), 254, "%ld", theNum);
 	theString[0] = (rc < 0 || rc > 255) ? 0 : (unsigned char)rc;
 }
 
 int NumToStringC(long theNum, Str255 theString)
 {
-	return snprintf(theString, 256, "%ld", theNum);
+	return snprintf((char*)theString, 256, "%ld", theNum);
 }
 
 void GetIndStringC(Str255 theStringC, short strListID, short index)
@@ -46,7 +57,7 @@ void GetIndStringC(Str255 theStringC, short strListID, short index)
 	}
 
 	pstrlen = f.Read<uint8_t>();
-	f.Read(theStringC, pstrlen);
+	f.Read((char*)theStringC, pstrlen);
 	theStringC[pstrlen] = '\0';
 	static_assert(sizeof(Str255) == 256);
 

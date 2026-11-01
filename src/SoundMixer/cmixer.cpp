@@ -281,6 +281,7 @@ void Source::Clear()
 
 void Source::Init(int theSampleRate, int theLength)
 {
+	gMixer.Lock();
 	this->samplerate = theSampleRate;
 	this->length = theLength;
 	this->sustainOffset = 0;
@@ -289,6 +290,7 @@ void Source::Init(int theSampleRate, int theLength)
 	SetPitch(1);
 	SetLoop(false);
 	Stop();
+	gMixer.Unlock();
 }
 
 void Source::RemoveFromMixer()
@@ -508,7 +510,9 @@ void Source::Play()
 
 void Source::Pause()
 {
+	gMixer.Lock();
 	state = CM_STATE_PAUSED;
+	gMixer.Unlock();
 }
 
 void Source::TogglePause()
@@ -521,8 +525,10 @@ void Source::TogglePause()
 
 void Source::Stop()
 {
+	gMixer.Lock();
 	state = CM_STATE_STOPPED;
 	rewind = true;
+	gMixer.Unlock();
 }
 
 //-----------------------------------------------------------------------------
@@ -558,6 +564,7 @@ void WavStream::Init(
 	bool theBigEndian,
 	std::span<char> theSpan)
 {
+	gMixer.Lock();
 	Clear();
 	Source::Init(theSampleRate, int((theSpan.size() / (theBitDepth / 8)) / theNChannels));
 	this->bitdepth = theBitDepth;
@@ -565,6 +572,7 @@ void WavStream::Init(
 	this->idx = 0;
 	this->span = theSpan;
 	this->bigEndian = theBigEndian;
+	gMixer.Unlock();
 }
 
 std::span<char> WavStream::GetBuffer(int nBytesOut)

@@ -56,14 +56,15 @@ void ARGBPixmap::Fill(UInt8 red, UInt8 green, UInt8 blue, UInt8 alpha)
 
 void ARGBPixmap::Plot(int x, int y, UInt32 color)
 {
+	// Real QuickDraw silently clips drawing to the port's bounds/clip
+	// region rather than erroring - callers like FrameOval/PaintOval (see
+	// Graphics.cpp) rely on that to draw shapes that straddle the edge of
+	// the pixmap without having to clip every point themselves first.
 	if (x < 0 || y < 0 || x >= width || y >= height)
 	{
-		throw std::out_of_range("ARGBPixmap::Plot: out of bounds");
+		return;
 	}
-	else
-	{
-		*(UInt32*) &data[4 * (y * width + x)] = color;
-	}
+	*(UInt32*) &data[4 * (y * width + x)] = color;
 }
 
 void ARGBPixmap::WriteTGA(const char* path) const

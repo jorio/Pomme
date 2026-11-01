@@ -1,5 +1,20 @@
 #pragma once
 
+// Pull in PommeTypes.h first: on Apple platforms it unconditionally
+// includes CoreFoundation.h (which transitively defines __MACTYPES__,
+// __FILES__, __MACERRORS__, __SCRIPT__, etc.) before any of the
+// #ifndef guards below are checked. Without this, a translation unit
+// that includes PommeEnums.h before CoreFoundation would define these
+// enumerators itself, and then get a redefinition error when
+// CoreFoundation.h is pulled in later by another header.
+#include "PommeTypes.h"
+
+// All the Files/Folders Manager constants below (through kClassicDomain)
+// also exist in the system's deprecated Files.h, which Cocoa still
+// transitively pulls in. Plain integer/FourCharCode constants, so
+// deferring to the system's values when present is always safe.
+#ifndef __FILES__
+
 //-----------------------------------------------------------------------------
 // Filesystem permission char
 
@@ -55,6 +70,8 @@ enum {
     kClassicDomain                      = -32762
 };
 
+#endif // __FILES__
+
 #define kCreateFolder       true
 #define kDontCreateFolder   false
 
@@ -63,8 +80,15 @@ enum {
 
 enum EErrors
 {
+#ifndef __MACTYPES__
     noErr           = 0,
+#endif
 
+// All the classic Mac OSErr codes below also exist in the system's
+// deprecated MacErrors.h, which Cocoa still transitively pulls in. They're
+// plain integer constants (no struct layout involved), so deferring to the
+// system's values when present is always safe.
+#ifndef __MACERRORS__
     unimpErr        = -4, // unimplemented core routine
 
     controlErr      = -17, // I/O System Errors
@@ -157,12 +181,17 @@ enum EErrors
     channelBusy             = -209,
     buffersTooSmall         = -210,
     siInvalidCompression    = -223,
+#endif
 };
 
 
 //-----------------------------------------------------------------------------
 // Script Manager enums
 
+// All of these also exist in the system's deprecated Script.h, which
+// Cocoa still transitively pulls in. Plain integer constants, so deferring
+// to the system's values when present is always safe.
+#ifndef __SCRIPT__
 enum EScriptManager
 {
 	// Implicit script codes
@@ -185,6 +214,7 @@ enum EScriptManager
 	langPortuguese		= 8,	// smRoman script
 	langNorwegian		= 9,	// smRoman script
 };
+#endif
 
 //-----------------------------------------------------------------------------
 

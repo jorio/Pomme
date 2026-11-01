@@ -8,9 +8,26 @@
 #include <iostream>
 #include <memory>
 #include <cstring>
+#include <cmath>
 
 using namespace Pomme;
 using namespace Pomme::Graphics;
+
+// Blends the 2x2 neighbourhood (c00 top-left, c10 top-right, c01 bottom-left,
+// c11 bottom-right) with fractional weights fx/fy. Used by CopyBits to scale 
+// an image when its source and destination rects are different sizes.
+static UInt32 BilinearSample(UInt32 c00, UInt32 c10, UInt32 c01, UInt32 c11, float fx, float fy)
+{
+	UInt32 result = 0;
+	for (int shift = 0; shift < 32; shift += 8)
+	{
+		float top = ((c00 >> shift) & 0xFF) * (1 - fx) + ((c10 >> shift) & 0xFF) * fx;
+		float bottom = ((c01 >> shift) & 0xFF) * (1 - fx) + ((c11 >> shift) & 0xFF) * fx;
+		UInt8 channel = (UInt8)(top * (1 - fy) + bottom * fy + 0.5f);
+		result |= ((UInt32)channel) << shift;
+	}
+	return result;
+}
 
 static bool IntersectRects(const Rect* r1, Rect* r2)
 {
@@ -198,6 +215,59 @@ void OffsetRect(Rect* r, short dh, short dv)
 	r->bottom	+= dv;
 }
 
+void InsetRect(Rect* r, short dh, short dv)
+{
+	r->left		+= dh;
+	r->right	-= dh;
+	r->top		+= dv;
+	r->bottom	-= dv;
+}
+
+Boolean PtInRect(Point pt, const Rect* r)
+{
+	return pt.h >= r->left
+		&& pt.h < r->right
+		&& pt.v >= r->top
+		&& pt.v < r->bottom;
+}
+
+Boolean SectRect(const Rect* src1, const Rect* src2, Rect* dstRect)
+{
+	dstRect->left   = std::max(src1->left,   src2->left);
+	dstRect->right  = std::min(src1->right,  src2->right);
+	dstRect->top    = std::max(src1->top,    src2->top);
+	dstRect->bottom = std::min(src1->bottom, src2->bottom);
+
+	// If the resulting rectangle is empty, set it to all zeros
+	if (dstRect->left >= dstRect->right || dstRect->top >= dstRect->bottom)
+	{
+		dstRect->left = dstRect->right = dstRect->top = dstRect->bottom = 0;
+		return false;
+	}
+	return true;
+}
+
+void UnionRect(const Rect* src1, const Rect* src2, Rect* dstRect)
+{
+	dstRect->left   = std::min(src1->left,   src2->left);
+	dstRect->right  = std::max(src1->right,  src2->right);
+	dstRect->top    = std::min(src1->top,    src2->top);
+	dstRect->bottom = std::max(src1->bottom, src2->bottom);
+}
+
+Boolean EqualRect(const Rect* rect1, const Rect* rect2)
+{
+	return rect1->left   == rect2->left
+		&& rect1->right  == rect2->right
+		&& rect1->top    == rect2->top
+		&& rect1->bottom == rect2->bottom;
+}
+
+Boolean EmptyRect(const Rect* r)
+{
+	return r->left >= r->right || r->top >= r->bottom;
+}
+
 // ---------------------------------------------------------------------------- -
 // GWorld
 
@@ -250,6 +320,36 @@ Ptr GetPixBaseAddr(PixMapHandle pm)
 	return (Ptr) GetImpl(*pm).data.data();
 }
 
+Boolean GetPixel(short h, short v)
+{
+	// GetPixel returns true if the pixel at (h,v) in the current port is black.
+	// For color ports, we check if the pixel is "dark" (not the background color).
+	if (!curPort)
+		return false;
+
+	auto offx = curPort->port.portRect.left;
+	auto offy = curPort->port.portRect.top;
+
+	int x = h - offx;
+	int y = v - offy;
+
+	// Bounds check
+	if (x < 0 || x >= curPort->pixels.width || y < 0 || y >= curPort->pixels.height)
+		return false;
+
+	UInt32* pixel = curPort->pixels.GetPtr(x, y);
+	UInt32 pixelValue = *pixel;
+
+	// In the original QuickDraw, GetPixel returns true if the pixel is black.
+	// For this ARGB implementation, check if it's not the background color.
+	UInt32 bgColor = penBG;
+#if !(__BIG_ENDIAN__)
+	ByteswapInts(sizeof(bgColor), 1, &bgColor);
+#endif
+
+	return pixelValue != bgColor;
+}
+
 // ---------------------------------------------------------------------------- -
 // Port
 
@@ -290,7 +390,9 @@ CGrafPtr GetWindowPort(WindowPtr window)
 
 PixMap* GetPortBitMapForCopyBits(CGrafPtr window)
 {
-	return GetImpl(window).macpmPtr;
+	// Returns a pointer that can be used with CopyBits.
+	// Internally it's a PixMap but we return BitMap* for API compatibility.
+	return (PixMap*) GetImpl(window).macpmPtr;
 }
 
 Rect* GetPortBounds(CGrafPtr port, Rect* rect)
@@ -535,7 +637,7 @@ void DrawPicture(PicHandle myPicture, const Rect* dstRect)
 
 void CopyBits(
 	const PixMap* srcBits,
-	PixMap* dstBits,
+              PixMap* dstBits,
 	const Rect* srcRect,
 	const Rect* dstRect,
 	short mode,
@@ -544,11 +646,13 @@ void CopyBits(
 {
 	(void) maskRgn;
 
+	// In classic QuickDraw, BitMap and PixMap had compatible layouts.
+	// We treat all bitmaps as pixmaps internally.
 	auto& srcPM = GetImpl((PixMapPtr) srcBits);
-	auto& dstPM = GetImpl(dstBits);
+	auto& dstPM = GetImpl((PixMapPtr) dstBits);
 
-	const auto& srcBounds = srcBits->bounds;
-	const auto& dstBounds = dstBits->bounds;
+	const auto& srcBounds = ((const PixMap*)srcBits)->bounds;
+	const auto& dstBounds = ((const PixMap*)dstBits)->bounds;
 
 	int srcRectWidth = Width(*srcRect);
 	int srcRectHeight = Height(*srcRect);
@@ -556,7 +660,47 @@ void CopyBits(
 	int dstRectHeight = Height(*dstRect);
 
 	if (srcRectWidth != dstRectWidth || srcRectHeight != dstRectHeight)
-		TODOFATAL2("can only copy between rects of same dimensions");
+	{
+		// Only plain srcCopy supports scaling. The other modes (transparent
+		// copy, and the srcOr/srcBic/notSrcBic stencil ops below) punch exact,
+		// pixel-for-pixel results - e.g. punching a bullet hole into a target
+		// mask - where a resampled source would corrupt the result, so those
+		// still require matching rect sizes.
+		if (mode != srcCopy || srcRectWidth <= 0 || srcRectHeight <= 0 || dstRectWidth <= 0 || dstRectHeight <= 0)
+			TODOFATAL2("can only copy between rects of same dimensions");
+
+		// Bilinear-resample srcRect into dstRect. This lets an image be
+		// authored at a different resolution than the destination expects
+		// (e.g. a background supplied at 2x the game's logical canvas size)
+		// and have it scaled to fit automatically, rather than requiring an
+		// exact pixel match.
+		for (int y = 0; y < dstRectHeight; y++)
+		{
+			float srcYF = (y + 0.5f) * srcRectHeight / (float)dstRectHeight - 0.5f;
+			int sy0 = (int)floorf(srcYF);
+			float fy = srcYF - sy0;
+			int sy1 = std::min(sy0 + 1, srcRectHeight - 1);
+			sy0 = std::max(sy0, 0);
+
+			const UInt32* srcRow0 = srcPM.GetPtr(srcRect->left - srcBounds.left, srcRect->top - srcBounds.top + sy0);
+			const UInt32* srcRow1 = srcPM.GetPtr(srcRect->left - srcBounds.left, srcRect->top - srcBounds.top + sy1);
+			UInt32* dstRow = dstPM.GetPtr(dstRect->left - dstBounds.left, dstRect->top - dstBounds.top + y);
+
+			for (int x = 0; x < dstRectWidth; x++)
+			{
+				float srcXF = (x + 0.5f) * srcRectWidth / (float)dstRectWidth - 0.5f;
+				int sx0 = (int)floorf(srcXF);
+				float fx = srcXF - sx0;
+				int sx1 = std::min(sx0 + 1, srcRectWidth - 1);
+				sx0 = std::max(sx0, 0);
+
+				dstRow[x] = BilinearSample(srcRow0[sx0], srcRow0[sx1], srcRow1[sx0], srcRow1[sx1], fx, fy);
+			}
+		}
+
+		curPort->DamageRegion(*dstRect);
+		return;
+	}
 
 	switch (mode)
 	{
@@ -598,12 +742,274 @@ void CopyBits(
 			break;
 		}
 
+		// srcOr/srcBic/notSrcBic are used to carve sprite-mask silhouettes (e.g.
+		// punching bullet holes into a target mask). These masks are 32-bit
+		// ARGB, but used as a binary stencil (same convention as CopyMask
+		// above): a dark pixel means "set" (classic QuickDraw 1 = black),
+		// white means "clear" (classic QuickDraw 0 = white). Each classic
+		// bitwise op reduces to a single conditional write once expressed in
+		// terms of that binary state - see Inside Macintosh: Imaging with
+		// QuickDraw for the bit-level definitions this mirrors.
+		case srcOr:
+		case srcBic:
+		case notSrcBic:
+		{
+			constexpr UInt32 kBlackPixel = 0xFF000000;
+			constexpr UInt32 kWhitePixel = 0xFFFFFFFF;
+
+			for (int y = 0; y < srcRectHeight; y++)
+			{
+				UInt32* dstPix = dstPM.GetPtr(dstRect->left - dstBounds.left, dstRect->top - dstBounds.top + y);
+				UInt32* srcPix = srcPM.GetPtr(srcRect->left - srcBounds.left, srcRect->top - srcBounds.top + y);
+				for (int x = 0; x < srcRectWidth; x++)
+				{
+					UInt32 s = *srcPix;
+					UInt8 r = (s >> 16) & 0xFF;
+					UInt8 g = (s >> 8) & 0xFF;
+					UInt8 b = s & 0xFF;
+					bool srcIsBlack = r < 128 || g < 128 || b < 128;
+
+					switch (mode)
+					{
+						case srcOr:
+							// dst = dst OR src: a black source forces dst black; a
+							// white source leaves dst untouched.
+							if (srcIsBlack) *dstPix = kBlackPixel;
+							break;
+						case srcBic:
+							// dst = dst AND NOT src: a black source clears dst to
+							// white (this is what punches the hole); white leaves
+							// dst untouched.
+							if (srcIsBlack) *dstPix = kWhitePixel;
+							break;
+						case notSrcBic:
+							// dst = dst AND src: a white source clears dst to white;
+							// black leaves dst untouched.
+							if (!srcIsBlack) *dstPix = kWhitePixel;
+							break;
+					}
+
+					dstPix++;
+					srcPix++;
+				}
+			}
+			break;
+		}
+
 		default:
 			TODOFATAL2("unsupported CopyBits mode " << mode);
 			break;
 	}
 
 	curPort->DamageRegion(*dstRect);
+}
+
+void CopyMask(
+	const PixMap* srcBits,
+	const PixMap* maskBits,
+              PixMap* dstBits,
+	const Rect* srcRect,
+	const Rect* maskRect,
+	const Rect* dstRect
+)
+{
+	/*
+	 * CopyMask copies the source image to the destination, using the mask
+	 * to determine which pixels to copy. Where the mask is black (non-zero),
+	 * the source pixel is copied; where it's white (zero), the destination
+	 * pixel is left unchanged.
+	 *
+	 * Per Inside Macintosh: Imaging with QuickDraw, the mask acts as a
+	 * stencil through which the source is copied.
+	 */
+
+	// In classic QuickDraw, BitMap and PixMap had compatible layouts.
+	// We treat all bitmaps as pixmaps internally.
+	auto& srcPM = GetImpl((PixMapPtr) srcBits);
+	auto& maskPM = GetImpl((PixMapPtr) maskBits);
+	auto& dstPM = GetImpl((PixMapPtr) dstBits);
+
+	const auto& srcBounds = ((const PixMap*)srcBits)->bounds;
+	const auto& maskBounds = ((const PixMap*)maskBits)->bounds;
+	const auto& dstBounds = ((const PixMap*)dstBits)->bounds;
+
+	int srcRectWidth = Width(*srcRect);
+	int srcRectHeight = Height(*srcRect);
+	int maskRectWidth = Width(*maskRect);
+	int maskRectHeight = Height(*maskRect);
+	int dstRectWidth = Width(*dstRect);
+	int dstRectHeight = Height(*dstRect);
+
+	// All three rectangles should have the same dimensions for simple copy
+	if (srcRectWidth != dstRectWidth || srcRectHeight != dstRectHeight ||
+	    srcRectWidth != maskRectWidth || srcRectHeight != maskRectHeight)
+	{
+		TODOFATAL2("CopyMask: can only copy between rects of same dimensions");
+	}
+
+	for (int y = 0; y < srcRectHeight; y++)
+	{
+		UInt32* srcPix = srcPM.GetPtr(srcRect->left - srcBounds.left, srcRect->top - srcBounds.top + y);
+		UInt32* maskPix = maskPM.GetPtr(maskRect->left - maskBounds.left, maskRect->top - maskBounds.top + y);
+		UInt32* dstPix = dstPM.GetPtr(dstRect->left - dstBounds.left, dstRect->top - dstBounds.top + y);
+
+		for (int x = 0; x < srcRectWidth; x++)
+		{
+			// In a 32-bit ARGB mask, check if mask pixel is non-white.
+			// Classic Mac masks were 1-bit: black = copy, white = don't copy.
+			UInt32 m = *maskPix;
+			
+			// Extract RGB (ignoring alpha) and see if it's dark
+			UInt8 r = (m >> 16) & 0xFF;
+			UInt8 g = (m >> 8) & 0xFF;
+			UInt8 b = m & 0xFF;
+			
+			if (r < 128 || g < 128 || b < 128)
+			{
+				*dstPix = *srcPix;
+			}
+
+			srcPix++;
+			maskPix++;
+			dstPix++;
+		}
+	}
+
+	curPort->DamageRegion(*dstRect);
+}
+
+// ---------------------------------------------------------------------------- -
+// Oval drawing
+
+static void _PlotOvalPoints(ARGBPixmap& pm, int cx, int cy, int x, int y, UInt32 color, int offx, int offy)
+{
+	// Plot 4 symmetric points of the oval
+	pm.Plot(cx + x - offx, cy + y - offy, color);
+	pm.Plot(cx - x - offx, cy + y - offy, color);
+	pm.Plot(cx + x - offx, cy - y - offy, color);
+	pm.Plot(cx - x - offx, cy - y - offy, color);
+}
+
+static void _DrawOvalOutline(ARGBPixmap& pm, const Rect* r, UInt32 color, int offx, int offy)
+{
+	/*
+	 * Midpoint ellipse algorithm to draw oval outline.
+	 * The oval is inscribed in the bounding rectangle r.
+	 */
+	int left = r->left;
+	int top = r->top;
+	int right = r->right;
+	int bottom = r->bottom;
+
+	// Center of the oval
+	int cx = (left + right) / 2;
+	int cy = (top + bottom) / 2;
+
+	// Semi-axes
+	int a = (right - left) / 2;  // horizontal radius
+	int b = (bottom - top) / 2;  // vertical radius
+
+	if (a <= 0 || b <= 0) return;
+
+	int a2 = a * a;
+	int b2 = b * b;
+	int fa2 = 4 * a2;
+	int fb2 = 4 * b2;
+
+	int x, y, sigma;
+
+	// First region: where slope > -1
+	for (x = 0, y = b, sigma = 2 * b2 + a2 * (1 - 2 * b); b2 * x <= a2 * y; x++)
+	{
+		_PlotOvalPoints(pm, cx, cy, x, y, color, offx, offy);
+		if (sigma >= 0)
+		{
+			sigma += fa2 * (1 - y);
+			y--;
+		}
+		sigma += b2 * ((4 * x) + 6);
+	}
+
+	// Second region: where slope <= -1
+	for (x = a, y = 0, sigma = 2 * a2 + b2 * (1 - 2 * a); a2 * y <= b2 * x; y++)
+	{
+		_PlotOvalPoints(pm, cx, cy, x, y, color, offx, offy);
+		if (sigma >= 0)
+		{
+			sigma += fb2 * (1 - x);
+			x--;
+		}
+		sigma += a2 * ((4 * y) + 6);
+	}
+}
+
+static void _FillOval(ARGBPixmap& pm, const Rect* r, UInt32 color, int offx, int offy)
+{
+	/*
+	 * Fill an oval inscribed in the bounding rectangle r.
+	 * Uses scanline approach with midpoint ellipse algorithm.
+	 */
+	int left = r->left;
+	int top = r->top;
+	int right = r->right;
+	int bottom = r->bottom;
+
+	int cx = (left + right) / 2;
+	int cy = (top + bottom) / 2;
+
+	int a = (right - left) / 2;
+	int b = (bottom - top) / 2;
+
+	if (a <= 0 || b <= 0) return;
+
+	// For each row from cy-b to cy+b, calculate the x extent and fill
+	for (int y = -b; y <= b; y++)
+	{
+		// Ellipse equation: (x/a)^2 + (y/b)^2 = 1
+		// Solving for x: x = a * sqrt(1 - (y/b)^2)
+		double yRatio = (double)y / (double)b;
+		double xExtent = a * std::sqrt(1.0 - yRatio * yRatio);
+		int x1 = cx - (int)xExtent;
+		int x2 = cx + (int)xExtent;
+
+		// Fill horizontal line from x1 to x2 at row cy+y
+		for (int x = x1; x <= x2; x++)
+		{
+			pm.Plot(x - offx, cy + y - offy, color);
+		}
+	}
+}
+
+void FrameOval(const Rect* r)
+{
+	if (!curPort) return;
+
+	UInt32 color = PackU32BE(&penFG);
+	auto offx = curPort->port.portRect.left;
+	auto offy = curPort->port.portRect.top;
+
+	_DrawOvalOutline(curPort->pixels, r, color, offx, offy);
+	curPort->DamageRegion(*r);
+}
+
+void PaintOval(const Rect* r)
+{
+	if (!curPort) return;
+
+	UInt32 color = PackU32BE(&penFG);
+	auto offx = curPort->port.portRect.left;
+	auto offy = curPort->port.portRect.top;
+
+	_FillOval(curPort->pixels, r, color, offx, offy);
+	curPort->DamageRegion(*r);
+}
+
+void FillOval(const Rect* r, const Pattern* pat)
+{
+	// For now, just paint with foreground color (ignoring pattern)
+	// A full implementation would apply the pattern
+	(void) pat;
+	PaintOval(r);
 }
 
 // ---------------------------------------------------------------------------- -

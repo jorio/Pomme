@@ -10,6 +10,23 @@
 
 #include <stddef.h>
 
+/*
+ * MACOS COMPATIBILITY:
+ * On macOS, Cocoa pulls in deprecated Carbon headers that declare functions like
+ * FindFolder, UseResFile, HLock, etc. We need to avoid re-declaring these.
+ * We use POMME_DECLARE_* macros to conditionally declare functions.
+ */
+#ifdef POMME_MACOS
+/* These functions are declared by system headers on macOS */
+#define POMME_DECLARE_FINDFOLDER 0
+#define POMME_DECLARE_RESFILE_FUNCS 0
+#define POMME_DECLARE_MEMORY_FUNCS 0
+#else
+#define POMME_DECLARE_FINDFOLDER 1
+#define POMME_DECLARE_RESFILE_FUNCS 1
+#define POMME_DECLARE_MEMORY_FUNCS 1
+#endif
+
 //-----------------------------------------------------------------------------
 // Structure unpacking
 
@@ -33,7 +50,9 @@ static inline float __frsqrte(float f)
 //-----------------------------------------------------------------------------
 // Source code compat
 
+#ifndef nil
 #define nil NULL
+#endif
 
 #ifdef __cplusplus
 #define POMME_NORETURN [[ noreturn ]]
@@ -69,13 +88,21 @@ OSErr FSOpen(const char* cName, short vRefNum, short* refNum);
 // (Note: this is an ancient function that predates HFS - IM vol II, 1985)
 short OpenResFile(const char* cName);
 
+// Builds an FSSpec directly from an absolute host-native path (e.g. a POSIX path on macOS),
+// unlike FSMakeFSSpec/OpenResFile above, which only understand colon-separated paths relative
+// to a registered directory ID. Use this when bridging from modern APIs (e.g. NSBundle) that
+// hand you a full host path. Volume 0 only.
+OSErr FSMakeFSSpecFromHostPath(const char* hostPath, FSSpec* spec);
+
 OSErr FSpCreate(const FSSpec* spec, OSType creator, OSType fileType, ScriptCode scriptTag);
 
 OSErr FSpDelete(const FSSpec* spec);
 
 OSErr ResolveAlias(const FSSpec* spec, AliasHandle alias, FSSpec* target, Boolean* wasChanged);
 
+#if POMME_DECLARE_FINDFOLDER
 OSErr FindFolder(short vRefNum, OSType folderType, Boolean createFolder, short* foundVRefNum, long* foundDirID);
+#endif
 
 OSErr DirCreate(short vRefNum, long parentDirID, const char* cstrDirectoryName, long* createdDirID);
 
@@ -101,6 +128,7 @@ OSErr SetFPos(short refNum, short posMode, long filePos);
 //-----------------------------------------------------------------------------
 // Resource file management
 
+#if POMME_DECLARE_RESFILE_FUNCS
 // MoreMacintoshToolbox.pdf p174
 OSErr ResError(void);
 
@@ -147,6 +175,7 @@ void DetachResource(Handle theResource);
 long GetResourceSizeOnDisk(Handle);
 
 long SizeResource(Handle);
+#endif /* POMME_DECLARE_RESFILE_FUNCS */
 
 //-----------------------------------------------------------------------------
 // QuickDraw 2D: Errors
@@ -159,6 +188,18 @@ OSErr QDError(void);
 void SetRect(Rect* r, short left, short top, short right, short bottom);
 
 void OffsetRect(Rect* r, short dh, short dv);
+
+void InsetRect(Rect* r, short dh, short dv);
+
+Boolean PtInRect(Point pt, const Rect* r);
+
+Boolean SectRect(const Rect* src1, const Rect* src2, Rect* dstRect);
+
+void UnionRect(const Rect* src1, const Rect* src2, Rect* dstRect);
+
+Boolean EqualRect(const Rect* rect1, const Rect* rect2);
+
+Boolean EmptyRect(const Rect* r);
 
 // ----------------------------------------------------------------------------
 // QuickDraw 2D: PICT
@@ -194,6 +235,9 @@ PixMapHandle GetGWorldPixMap(GWorldPtr offscreenGWorld);
 
 // IM:QD:6-38
 Ptr GetPixBaseAddr(PixMapHandle pm);
+
+// Get pixel color at point
+Boolean GetPixel(short h, short v);
 
 // ----------------------------------------------------------------------------
 // QuickDraw 2D: Port
@@ -261,15 +305,38 @@ void DrawStringC(const char* cstr);
 // IM:QD:7-44
 void DrawPicture(PicHandle myPicture, const Rect* dstRect);
 
-// WARNING: Actual toolbox function takes BitMap* arguments, not PixMap*!
+// CopyBits - copies bits from source to destination bitmap/pixmap
+// Note: In classic QuickDraw, this took BitMap* but worked with PixMap* too
+// because PixMap's first fields matched BitMap's layout. For compatibility,
+// we accept BitMap* and internally treat them as PixMap*.
 void CopyBits(
 	const PixMap* srcBits,
-	PixMap* dstBits,
+              PixMap* dstBits,
 	const Rect* srcRect,
 	const Rect* dstRect,
 	short mode,
 	void* maskRgn
 );
+
+// CopyMask - copy source to destination using mask (where mask is black, copy source)
+// Note: Same compatibility approach as CopyBits
+void CopyMask(
+	const PixMap* srcBits,
+	const PixMap* maskBits,
+              PixMap* dstBits,
+	const Rect* srcRect,
+	const Rect* maskRect,
+	const Rect* dstRect
+);
+
+// Draw oval outline inscribed in bounding rectangle
+void FrameOval(const Rect* r);
+
+// Fill oval inscribed in bounding rectangle with current pen pattern
+void PaintOval(const Rect* r);
+
+// Fill oval inscribed in bounding rectangle with specified pattern
+void FillOval(const Rect* r, const Pattern* pat);
 
 //-----------------------------------------------------------------------------
 // QuickDraw 2D extensions
@@ -335,10 +402,13 @@ int NumToStringC(long theNum, Str255 theStringC);
 // Get substring in 'STR#' resource as C string (zero-terminated)
 void GetIndStringC(Str255 theStringC, short strListID, short index);
 
+// Returns the application's primary text encoding (typically kTextEncodingMacRoman)
+UInt32 GetApplicationTextEncoding(void);
+
 //-----------------------------------------------------------------------------
 // Input
 
-void GetKeys(KeyMap);
+void GetKeys(KeyMap theKeys);
 
 // Gets current mouse coordinates relative to current port
 void GetMouse(Point* mouseLoc);
@@ -348,6 +418,7 @@ Boolean Button(void);
 //-----------------------------------------------------------------------------
 // Memory: No-op
 
+#if POMME_DECLARE_MEMORY_FUNCS
 // No-op in Pomme.
 static inline void MaxApplZone(void) {}
 
@@ -392,9 +463,13 @@ static inline void NoPurgePixels(PixMapHandle handle) { (void) handle; }	// no-o
 static inline Boolean LockPixels(PixMapHandle handle) { (void) handle; return true; }	// no-op; shall always return true
 
 // No-op in Pomme.
+static inline void UnlockPixels(PixMapHandle handle) { (void) handle; }	// no-op
+
+// No-op in Pomme.
 // If the Memory Manager started up in 24-bit mode, strips flag bits from 24-bit memory addresses;
 // otherwise (in 32-bit mode), returns the address unchanged.
 static inline Ptr StripAddress(Ptr ptr) { return ptr; }  // no-op
+#endif /* POMME_DECLARE_MEMORY_FUNCS */
 
 //-----------------------------------------------------------------------------
 // Memory: Handle
